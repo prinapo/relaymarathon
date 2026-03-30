@@ -1,0 +1,22 @@
+{
+  "appId": "com.prinapo.relaymarathon",
+  "appName": "Milano Relay Marathon",
+  "webDir": "dist/spa",
+  "androidPackageFormat": "debug",
+  "plugins": {
+    "SocialLogin": {
+      "providers": {
+        "google": true,
+        "apple": true,
+        "facebook": false,
+        "twitter": false
+      },
+      "logLevel": 1
+    }
+  },
+  "cordova": {
+    "preferences": {
+      "BuildOpenBSDFilters": "false"
+    }
+  }
+}

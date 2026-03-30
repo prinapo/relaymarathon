@@ -1,0 +1,33 @@
+diff --git a/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java b/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
+index 5cfaa74..9aa6e9c 100644
+--- a/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
++++ b/node_modules/@capgo/capacitor-social-login/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
+@@ -547,13 +547,27 @@ public class GoogleProvider implements SocialProvider {
+ 
+                     JSONObject options = call.getObject("options", new JSObject());
+                     Boolean forceRefreshToken = false;
++                    Boolean preferIdTokenOnly = false;
+                     try {
+                         forceRefreshToken = options != null && options.has("forceRefreshToken") && options.getBoolean("forceRefreshToken");
++                        preferIdTokenOnly = options != null && options.has("preferIdTokenOnly") && options.getBoolean("preferIdTokenOnly");
+                     } catch (JSONException e) {
+-                        Log.e(LOG_TAG, "Error parsing forceRefreshToken option", e);
++                        Log.e(LOG_TAG, "Error parsing Google login options", e);
+                     }
+ 
+                     GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.getData());
++
++                    if (GoogleProvider.this.mode == GoogleProviderLoginType.ONLINE && preferIdTokenOnly) {
++                        resultObj.put("profile", user);
++                        resultObj.put("idToken", googleIdTokenCredential.getIdToken());
++                        resultObj.put("responseType", "online");
++                        resultObj.put("usedIdTokenOnly", true);
++                        response.put("result", resultObj);
++                        persistState(googleIdTokenCredential.getIdToken(), null);
++                        call.resolve(response);
++                        return;
++                    }
++
+                     ListenableFuture<AuthorizationResult> future = getAuthorizationResult(forceRefreshToken);
+ 
+                     // Use ExecutorService to retrieve the access token
