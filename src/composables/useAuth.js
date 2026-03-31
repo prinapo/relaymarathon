@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithPopup,
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
@@ -29,6 +30,8 @@ let socialLoginInitializationPromise = null;
 const authReadyPromise = new Promise((resolve) => {
   authReadyResolver = resolve;
 });
+
+const isWebPlatform = () => Capacitor.getPlatform() === "web";
 
 const getGoogleClientConfig = () => {
   const webClientId =
@@ -119,25 +122,33 @@ const initAuth = () => {
 
   // Preload the social login provider early so the web popup/native bridge
   // is ready by the time the user taps the Google button.
-  ensureSocialLoginInitialized().catch((error) => {
-    console.warn("Social login initialization failed:", error);
-  });
+  if (!isWebPlatform()) {
+    ensureSocialLoginInitialized().catch((error) => {
+      console.warn("Social login initialization failed:", error);
+    });
+  }
 
   unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-    user.value = firebaseUser;
+    try {
+      user.value = firebaseUser;
 
-    if (firebaseUser) {
-      const tokenResult = await firebaseUser.getIdTokenResult(true);
-      userClaims.value = tokenResult.claims;
-    } else {
+      if (firebaseUser) {
+        const tokenResult = await firebaseUser.getIdTokenResult(true);
+        userClaims.value = tokenResult.claims;
+      } else {
+        userClaims.value = null;
+      }
+    } catch (error) {
+      console.error("Error resolving auth token:", error);
+      user.value = firebaseUser || null;
       userClaims.value = null;
-    }
-
-    authInitialized.value = true;
-    isLoading.value = false;
-    if (authReadyResolver) {
-      authReadyResolver(firebaseUser);
-      authReadyResolver = null;
+    } finally {
+      authInitialized.value = true;
+      isLoading.value = false;
+      if (authReadyResolver) {
+        authReadyResolver(user.value);
+        authReadyResolver = null;
+      }
     }
   });
 };
@@ -156,6 +167,15 @@ export function useAuth() {
 
   const login = async () => {
     try {
+      if (isWebPlatform()) {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({
+          prompt: "select_account",
+        });
+        await signInWithPopup(auth, provider);
+        return;
+      }
+
       await ensureSocialLoginInitialized();
 
       const googleLoginResult = await SocialLogin.login({
@@ -200,6 +220,11 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      if (isWebPlatform()) {
+        await signOut(auth);
+        return;
+      }
+
       await Promise.allSettled([
         signOut(auth),
         ensureSocialLoginInitialized()

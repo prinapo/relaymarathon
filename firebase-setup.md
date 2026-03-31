@@ -32,6 +32,11 @@ service cloud.firestore {
       allow read: if true;  // Public read for calculations
       allow write: if request.auth != null && request.auth.token.email == 'giovanni.prinetti@gmail.com';
     }
+
+    match /help/{helpId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
   }
 }
 ```

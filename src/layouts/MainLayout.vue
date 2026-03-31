@@ -101,6 +101,20 @@
 
           <q-item
             clickable
+            :to="'/help'"
+            @click="drawerLeft = false"
+            active-class="bg-blue-1 text-blue-9"
+          >
+            <q-item-section avatar>
+              <q-icon name="info" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ t("nav.help") }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
             :to="'/route'"
             @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
@@ -189,6 +203,7 @@ export default {
         "/login": t("page.login"),
         "/appointments": t("page.appointments"),
         "/faq": t("page.faq"),
+        "/help": t("page.help"),
         "/route": t("page.route"),
         "/splash": t("page.splash"),
       };

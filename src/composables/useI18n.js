@@ -49,13 +49,19 @@ const initTranslations = async () => {
       translations.value = normalizeTranslations(docSnap.data());
     }
 
-    unsubscribeTranslations = onSnapshot(docRef, (snapshot) => {
-      if (snapshot.exists()) {
-        translations.value = normalizeTranslations(snapshot.data());
-      } else {
-        translations.value = { ...defaultTranslations };
+    unsubscribeTranslations = onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          translations.value = normalizeTranslations(snapshot.data());
+        } else {
+          translations.value = { ...defaultTranslations };
+        }
+      },
+      (error) => {
+        console.error("Translations snapshot error:", error);
       }
-    });
+    );
   } catch (error) {
     console.error("Error initializing translations:", error);
   }

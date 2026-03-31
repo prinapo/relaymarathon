@@ -189,7 +189,7 @@
     </q-card>
 
     <q-dialog v-model="confirmDeleteDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("team.confirmDeleteTitle")
         }}</q-card-section>
@@ -214,7 +214,7 @@
     </q-dialog>
 
     <q-dialog v-model="confirmRegenerateDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("team.confirmRegenerateTitle")
         }}</q-card-section>

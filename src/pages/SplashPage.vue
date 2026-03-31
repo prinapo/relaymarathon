@@ -4,8 +4,7 @@
       <q-img
         :src="logoUrl"
         :ratio="1"
-        style="max-width: 200px; width: 100%"
-        class="splash-logo q-mb-lg"
+        class="splash-logo full-width q-mb-lg"
       />
       <div class="text-h5 text-weight-bold q-mb-md">
         {{ t("page.splash") }}

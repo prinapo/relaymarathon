@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "600515034231-qhmv6bohr8r73gvue8j8vbsldueh598g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.prinapo.relaymarathon",
+            "certificate_hash": "5dc640c21befe144f1b5c694ed71262757701581"
+          }
+        },
+        {
           "client_id": "600515034231-b5vnh2ghitevnd6c4sl273mtbuqlab01.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -1,7 +1,7 @@
 <template>
   <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
     <div>
-      <div class="text-h2" style="font-size: 150px">404</div>
+      <div class="text-h2 text-404">404</div>
       <div class="text-h6">{{ t('notFound.message') }}</div>
       <q-btn
         class="q-mt-xl"

@@ -29,6 +29,7 @@ export default route(function (/* { store, ssrContext } */) {
             component: () => import("pages/AppointmentsPage.vue"),
           },
           { path: "faq", component: () => import("pages/FaqPage.vue") },
+          { path: "help", component: () => import("pages/HelpPage.vue") },
           { path: "route", component: () => import("pages/PercorsoPage.vue") },
         ],
       },

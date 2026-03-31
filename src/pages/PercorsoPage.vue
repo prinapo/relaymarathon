@@ -13,7 +13,6 @@
             height="580"
             frameborder="0"
             scrolling="no"
-            style="border-radius: 8px"
           ></iframe>
         </div>
       </q-card-section>

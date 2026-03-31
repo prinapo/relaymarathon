@@ -32,5 +32,10 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if request.auth != null && request.auth.token.admin == true;
     }
+
+    match /help/{helpId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
   }
 }

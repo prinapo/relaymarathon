@@ -41,25 +41,61 @@ npm run build:pwa
 Build Android debug:
 
 ```bash
-npx quasar build -m capacitor -T android -d
+quasar build -m capacitor -T android -debug
 ```
 
 Build Android release:
 
 ```bash
-npx quasar build -m capacitor -T android
+quasar build -m capacitor -T android
+```
+
+Bundle Android release per Google Play:
+
+```bash
+cd src-capacitor\android
+.\gradlew.bat bundleRelease
+```
+
+Script guidato per nuova release Android:
+
+```bash
+npm run release:android
+```
+
+Lo script:
+
+- chiede se la release e' `minor` o `major`
+- aggiorna `version` in [package.json](C:/Users/giova/quasar/mm26/package.json)
+- aggiorna `versionCode` e `versionName` in [build.gradle](C:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle)
+- esegue `quasar build -m capacitor -T android`
+- esegue `bundleRelease`
+
+Output atteso:
+
+```text
+src-capacitor/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 Build iOS:
 
 ```bash
-npx quasar build -m capacitor -T ios
+quasar build -m capacitor -T ios
+```
+
+Installazione APK debug sul telefono collegato via ADB:
+
+```bash
+adb devices
+adb -s <DEVICE_ID> install -r dist\capacitor\android\apk\debug\app-debug.apk
 ```
 
 Nota:
 
-- la configurazione Capacitor principale e' in [capacitor.config.json](/c:/Users/giova/quasar/mm26/capacitor.config.json)
-- il repo usa come unica sorgente nativa i progetti [android](/c:/Users/giova/quasar/mm26/android) e [ios](/c:/Users/giova/quasar/mm26/ios)
+- la configurazione Capacitor principale e' in [capacitor.config.json](/c:/Users/giova/quasar/mm26/src-capacitor/capacitor.config.json)
+- il repo usa la struttura standard Quasar + Capacitor dentro [src-capacitor](/c:/Users/giova/quasar/mm26/src-capacitor)
+- i progetti nativi reali sono [src-capacitor/android](/c:/Users/giova/quasar/mm26/src-capacitor/android) e [src-capacitor/ios](/c:/Users/giova/quasar/mm26/src-capacitor/ios)
+- per la release Play il repo legge la firma da [keystore.properties](/c:/Users/giova/quasar/mm26/keystore.properties) in root e dalla keystore locale `mm26-upload.keystore` in root progetto
 
 ## Configurazione
 
@@ -82,7 +118,7 @@ File e riferimenti utili:
 
 - gestione squadre
 - calcolo tempi gara per tappa
-- appuntamenti e FAQ bilingui
+- appuntamenti, FAQ e help bilingui
 - area admin con custom claims Firebase
 
 ## Stato login Google

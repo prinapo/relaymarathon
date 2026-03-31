@@ -1,6 +1,5 @@
 <template>
   <q-page>
-    <div class="table-container">
       <q-card class="q-pa-sm">
         <q-card-section>
           <div class="text-h6">{{ t("appointments.title") }}</div>
@@ -35,13 +34,7 @@
                 </div>
                 <div
                   v-if="getBilingual(props.row, 'description')"
-                  class="text-caption text-grey-7"
-                  style="
-                    max-width: 150px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                  "
+                  class="text-caption text-grey-7 description-ellipsis"
                 >
                   {{ getBilingual(props.row, "description") }}
                 </div>
@@ -104,10 +97,9 @@
           </q-table>
         </q-card-section>
       </q-card>
-    </div>
 
     <q-dialog v-model="showDialog" persistent>
-      <q-card style="min-width: 400px; max-width: 90vw">
+      <q-card class="dialog-card-medium">
         <q-card-section>
           <div class="text-h6">
             {{
@@ -190,7 +182,7 @@
     </q-dialog>
 
     <q-dialog v-model="showDetails">
-      <q-card style="min-width: 350px; max-width: 90vw">
+      <q-card class="dialog-card-medium">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">
             {{ getBilingual(selectedAppointment, "title") }}
@@ -522,13 +514,10 @@ export default {
 </script>
 
 <style scoped>
-.table-container {
-  max-width: 800px;
-  width: 100%;
-  margin: 0 auto;
-  overflow-x: auto;
-}
-.table-container :deep(.q-table__middle) {
-  overflow-x: hidden;
+.description-ellipsis {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

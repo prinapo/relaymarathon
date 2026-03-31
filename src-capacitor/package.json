@@ -1,0 +1,17 @@
+{
+  "name": "Milano Relay Marathon",
+  "version": "1.3.0",
+  "description": "Milano Relay Marathon app built with Quasar, Firebase, and Capacitor",
+  "author": "giova",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3",
+    "@capgo/capacitor-social-login": "^8.3.9"
+  }
+}

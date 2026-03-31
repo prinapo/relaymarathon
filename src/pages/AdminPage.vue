@@ -252,7 +252,7 @@
     </q-card>
 
     <q-dialog v-model="confirmEditDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("admin.confirmEditTitle")
         }}</q-card-section>
@@ -276,7 +276,7 @@
     </q-dialog>
 
     <q-dialog v-model="confirmDeleteDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("admin.confirmDeleteTitle")
         }}</q-card-section>
@@ -301,7 +301,7 @@
     </q-dialog>
 
     <q-dialog v-model="confirmRemoveSegmentDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("admin.confirmRemoveSegmentTitle")
         }}</q-card-section>
@@ -327,7 +327,7 @@
     </q-dialog>
 
     <q-dialog v-model="segmentEditorDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           t("admin.editSegment")
         }}</q-card-section>
@@ -377,7 +377,7 @@
     </q-dialog>
 
     <q-dialog v-model="raceFieldEditorDialog" persistent>
-      <q-card style="min-width: 320px">
+      <q-card class="dialog-card">
         <q-card-section class="text-h6">{{
           activeRaceFieldLabel
         }}</q-card-section>

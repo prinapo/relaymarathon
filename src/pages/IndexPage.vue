@@ -94,14 +94,12 @@
               max="60"
               outlined
               dense
-              style="min-width: 100px"
-              class="text-weight-bold"
+              class="text-weight-bold minWidth100"
               @update:model-value="updateStartDelay"
             />
             <span
               v-else
-              class="text-weight-bold text-h6"
-              style="min-width: 100px"
+              class="text-weight-bold text-h6 minWidth100"
               @mousedown="notifyStartDelayReadOnly"
             >
               {{ setupValues.startDelay }}
@@ -143,12 +141,12 @@
                 key="label"
                 :props="props"
                 :class="getRowClass(props.row)"
-                style="min-width: 100px; white-space: normal"
+                class="label-cell"
               >
                 <template v-if="props.row.editable && canEditRow(props.row)">
-                  <div class="cursor-pointer">
+                  <div class="cursor-pointer" @click.stop="openCompactSegmentEdit(props.row)">
                     <div class="row items-center">
-                      <div style="width: 20px" class="row justify-center">
+                      <div class="icon-cell row justify-center">
                         <q-icon
                           v-if="props.row.segmentType"
                           :name="
@@ -165,75 +163,15 @@
                     </div>
                     <div
                       v-if="props.row.label.runner"
-                      class="text-weight-regular"
-                      style="padding-left: 20px"
+                      class="text-weight-regular label-indent"
                     >
                       {{ props.row.label.runner }}
                     </div>
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                      @before-show="startCompactSegmentEdit(props.row)"
-                    >
-                      <q-card flat bordered style="min-width: 260px">
-                        <q-card-section class="q-gutter-sm">
-                          <div class="text-subtitle2">
-                            {{ props.row.segmentName }}
-                          </div>
-                          <q-input
-                            v-if="props.row.segmentType === 'solo'"
-                            v-model="editDraft.name"
-                            :label="t('index.name')"
-                            dense
-                            autofocus
-                          />
-                          <div class="row q-col-gutter-sm">
-                            <div class="col">
-                              <q-select
-                                v-model="editDraft.minutes"
-                                :options="minuteOptions"
-                                :label="t('index.min')"
-                                dense
-                                emit-value
-                                map-options
-                              />
-                            </div>
-                            <div class="col">
-                              <q-select
-                                v-model="editDraft.seconds"
-                                :options="secondOptions"
-                                :label="t('index.sec')"
-                                dense
-                                emit-value
-                                map-options
-                              />
-                            </div>
-                          </div>
-                        </q-card-section>
-
-                        <q-card-actions align="right">
-                          <q-btn
-                            v-close-popup
-                            flat
-                            :label="t('index.cancel')"
-                            color="primary"
-                          />
-                          <q-btn
-                            v-close-popup
-                            flat
-                            :label="t('index.save')"
-                            color="primary"
-                            @click="saveCompactSegmentEdit(props.row)"
-                          />
-                        </q-card-actions>
-                      </q-card>
-                    </q-popup-proxy>
                   </div>
                 </template>
                 <template v-else>
                   <div class="row items-center">
-                    <div style="width: 20px" class="row justify-center">
+                    <div class="icon-cell row justify-center">
                       <q-icon
                         v-if="props.row.segmentType"
                         :name="
@@ -260,8 +198,7 @@
                   </div>
                   <div
                     v-if="props.row.label.runner"
-                    class="text-weight-regular"
-                    style="padding-left: 20px"
+                    class="text-weight-regular label-indent"
                   >
                     {{ props.row.label.runner }}
                   </div>
@@ -272,14 +209,14 @@
                 v-for="col in props.cols.filter((col) => col.name !== 'label')"
                 :key="col.name"
                 :props="props"
-                :class="
+                :class="[
                   col.name === 'arrivalTime'
                     ? 'text-right text-weight-bold text-caption'
                     : col.name === 'duration'
                     ? 'text-right text-caption'
-                    : 'text-center text-caption'
-                "
-                style="white-space: nowrap"
+                    : 'text-center text-caption',
+                  'text-nowrap'
+                ]"
               >
                 {{ col.value }}
               </q-td>
@@ -294,6 +231,60 @@
           <q-icon name="groups" size="16px" class="q-mr-xs" />
           {{ t("index.legendGroup") }}
         </div>
+
+        <q-dialog v-model="showCompactSegmentDialog" persistent>
+          <q-card class="details-card flat bordered">
+            <q-card-section class="q-gutter-sm">
+              <div class="text-subtitle2">
+                {{ currentCompactRow?.segmentName || '' }}
+              </div>
+              <q-input
+                v-if="currentCompactRow?.segmentType === 'solo'"
+                v-model="editDraft.name"
+                :label="t('index.name')"
+                dense
+                autofocus
+              />
+              <div class="row items-end q-gutter-sm pace-row">
+                <div class="col pace-part">
+                  <q-select
+                    v-model="editDraft.minutes"
+                    :options="minuteOptions"
+                    :label="t('index.min')"
+                    dense
+                    emit-value
+                    map-options
+                  />
+                </div>
+                <div class="col pace-part">
+                  <q-select
+                    v-model="editDraft.seconds"
+                    :options="secondOptions"
+                    :label="t('index.sec')"
+                    dense
+                    emit-value
+                    map-options
+                  />
+                </div>
+              </div>
+            </q-card-section>
+
+            <q-card-actions align="right">
+              <q-btn
+                flat
+                :label="t('index.cancel')"
+                color="primary"
+                @click="closeCompactSegmentEdit"
+              />
+              <q-btn
+                flat
+                :label="t('index.save')"
+                color="primary"
+                @click="saveCompactSegmentEdit"
+              />
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
       </q-card-section>
 
       <q-card-section v-if="!user">
@@ -355,6 +346,8 @@ export default {
     const races = ref([]);
     const setupValues = ref({ startDelay: 0, segmentConfigs: {} });
     const editDraft = ref({ name: "", minutes: 5, seconds: 0 });
+    const showCompactSegmentDialog = ref(false);
+    const currentCompactRow = ref(null);
     const savingTeamSetup = ref(false);
     const suppressSetupAutosave = ref(false);
     let autosaveTimer = null;
@@ -656,7 +649,19 @@ export default {
       };
     };
 
-    const saveCompactSegmentEdit = (row) => {
+    const openCompactSegmentEdit = (row) => {
+      if (!row?.editable) return;
+      currentCompactRow.value = row;
+      startCompactSegmentEdit(row);
+      showCompactSegmentDialog.value = true;
+    };
+
+    const closeCompactSegmentEdit = () => {
+      showCompactSegmentDialog.value = false;
+      currentCompactRow.value = null;
+    };
+
+    const saveCompactSegmentEdit = (row = currentCompactRow.value) => {
       if (!row?.editable || !canEditRow(row)) return;
       const updatedConfig = {
         ...(setupValues.value.segmentConfigs?.[row.segmentId] || {}),
@@ -680,6 +685,7 @@ export default {
       } else {
         saveOwnRunnerSegment(row.segmentId, updatedConfig);
       }
+      closeCompactSegmentEdit();
     };
 
     const saveOwnRunnerSegment = async (segmentId, config) => {
@@ -1023,9 +1029,50 @@ export default {
       notifyReadOnly,
       notifyStartDelayReadOnly,
       updateStartDelay,
+      showCompactSegmentDialog,
+      currentCompactRow,
+      openCompactSegmentEdit,
+      closeCompactSegmentEdit,
       startCompactSegmentEdit,
       saveCompactSegmentEdit,
     };
   },
 };
 </script>
+
+<style scoped>
+.minWidth100 {
+  min-width: 100px;
+}
+.label-cell {
+  min-width: 100px;
+  white-space: normal;
+}
+.icon-cell {
+  width: 20px;
+}
+.label-indent {
+  padding-left: 20px;
+}
+.details-card {
+  min-width: 260px;
+  width: min(92vw, 360px);
+  max-width: 100vw;
+}
+.details-card .pace-row {
+  flex-wrap: nowrap;
+}
+.details-card .pace-part {
+  min-width: 120px;
+  max-width: 160px;
+}
+.details-card .col {
+  min-width: 0;
+}
+@media (max-width: 680px) {
+  .details-card {
+    width: calc(100vw - 16px);
+    min-width: unset;
+  }
+}
+</style>

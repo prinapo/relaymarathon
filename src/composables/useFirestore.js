@@ -16,6 +16,7 @@ const racesCollection = collection(db, "races");
 const teamsCollection = collection(db, "teams");
 const appointmentsCollection = collection(db, "appointments");
 const faqCollection = collection(db, "faq");
+const helpCollection = collection(db, "help");
 
 const createSegment = (index = 1) => ({
   id: `segment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -226,6 +227,7 @@ export function useFirestore() {
       questionEn: data.questionEn ?? "",
       answer: data.answer ?? "",
       answerEn: data.answerEn ?? "",
+      hidden: data.hidden === true,
       order: Number(data.order) || 0,
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
@@ -276,6 +278,27 @@ export function useFirestore() {
     await deleteDoc(doc(db, "appointments", appointmentId));
   };
 
+  const normalizeHelp = (snapshotOrHelp) => {
+    if (!snapshotOrHelp) return null;
+
+    const data =
+      typeof snapshotOrHelp.data === "function"
+        ? snapshotOrHelp.data()
+        : snapshotOrHelp;
+
+    return {
+      id: snapshotOrHelp.id || data.id,
+      title: data.title ?? "",
+      titleEn: data.titleEn ?? "",
+      body: data.body ?? "",
+      bodyEn: data.bodyEn ?? "",
+      hidden: data.hidden === true,
+      order: Number(data.order) || 0,
+      createdAt: data.createdAt ?? null,
+      updatedAt: data.updatedAt ?? null,
+    };
+  };
+
   const getFaqs = async () => {
     const snapshot = await getDocs(faqCollection);
     const faqs = snapshot.docs.map(normalizeFaq);
@@ -307,7 +330,11 @@ export function useFirestore() {
       questionEn: faqData.questionEn ?? "",
       answer: faqData.answer ?? "",
       answerEn: faqData.answerEn ?? "",
-      order: Number(faqData.order) ?? maxOrder + 1,
+      hidden: faqData.hidden === true,
+      order:
+        faqData.order === undefined || faqData.order === null
+          ? maxOrder + 1
+          : Number(faqData.order),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -324,6 +351,68 @@ export function useFirestore() {
 
   const deleteFaq = async (faqId) => {
     await deleteDoc(doc(db, "faq", faqId));
+  };
+
+  const getHelps = async () => {
+    const snapshot = await getDocs(helpCollection);
+    const helps = snapshot.docs.map(normalizeHelp);
+    return helps.sort((a, b) => a.order - b.order);
+  };
+
+  const getHelpsListener = (onUpdate, onError = () => {}) => {
+    return onSnapshot(
+      helpCollection,
+      (snapshot) => {
+        const helps = snapshot.docs
+          .map(normalizeHelp)
+          .sort((a, b) => a.order - b.order);
+        onUpdate(helps);
+      },
+      onError
+    );
+  };
+
+  const createHelp = async (helpData) => {
+    const existingHelps = await getHelps();
+    const maxOrder =
+      existingHelps.length > 0
+        ? Math.max(...existingHelps.map((h) => h.order))
+        : -1;
+
+    const docRef = await addDoc(helpCollection, {
+      title: helpData.title ?? "",
+      titleEn: helpData.titleEn ?? "",
+      body: helpData.body ?? "",
+      bodyEn: helpData.bodyEn ?? "",
+      hidden: helpData.hidden === true,
+      order:
+        helpData.order === undefined || helpData.order === null
+          ? maxOrder + 1
+          : Number(helpData.order),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return docRef.id;
+  };
+
+  const updateHelp = async (helpId, data) => {
+    const helpRef = doc(db, "help", helpId);
+    await updateDoc(helpRef, {
+      ...data,
+      updatedAt: new Date(),
+    });
+  };
+
+  const deleteHelp = async (helpId) => {
+    await deleteDoc(doc(db, "help", helpId));
+  };
+
+  const reorderHelps = async (helps) => {
+    const batch = writeBatch(db);
+    helps.forEach((help, index) => {
+      batch.update(doc(db, "help", help.id), { order: index });
+    });
+    await batch.commit();
   };
 
   const reorderFaqs = async (faqs) => {
@@ -363,5 +452,11 @@ export function useFirestore() {
     updateFaq,
     deleteFaq,
     reorderFaqs,
+    getHelps,
+    getHelpsListener,
+    createHelp,
+    updateHelp,
+    deleteHelp,
+    reorderHelps,
   };
 }

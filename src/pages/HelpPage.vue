@@ -2,12 +2,12 @@
   <q-page>
     <q-card class="q-pa-sm">
       <q-card-section>
-        <div class="text-h6">{{ t("faq.title") }}</div>
+        <div class="text-h6">{{ t("help.title") }}</div>
       </q-card-section>
 
       <q-card-section v-if="isAdmin" class="q-pt-none">
         <q-btn
-          :label="t('faq.add')"
+          :label="t('common.add')"
           color="primary"
           icon="add"
           @click="openDialog()"
@@ -20,20 +20,20 @@
         </div>
 
         <div
-          v-else-if="visibleFaqs.length === 0"
+          v-else-if="visibleHelps.length === 0"
           class="text-center text-grey-7 q-pa-md"
         >
-          {{ t("faq.noFaqs") }}
+          {{ t('help.noContent') }}
         </div>
 
         <q-list v-else separator>
           <q-expansion-item
-            v-for="(faq, index) in visibleFaqs"
-            :key="faq.id"
+            v-for="(help, index) in visibleHelps"
+            :key="help.id"
             expand-separator
             switch-toggle-side
             class="q-mb-sm faq-item"
-            :class="{ 'faq-item--hidden': faq.hidden }"
+            :class="{ 'faq-item--hidden': help.hidden }"
             header-class="q-py-sm"
           >
             <template #header>
@@ -41,15 +41,12 @@
                 <div class="col">
                   <div
                     class="text-h6 text-primary text-weight-bold"
-                    :class="{ 'faq-text--hidden': faq.hidden }"
+                    :class="{ 'faq-text--hidden': help.hidden }"
                   >
-                    {{ getBilingual(faq, "question") }}
+                    {{ getBilingual(help, 'title') }}
                   </div>
-                  <div
-                    v-if="faq.hidden"
-                    class="text-caption text-grey-7"
-                  >
-                    {{ t("faq.hidden") }}
+                  <div v-if="help.hidden" class="text-caption text-grey-7">
+                    {{ t('help.hidden') }}
                   </div>
                 </div>
 
@@ -60,7 +57,7 @@
                     dense
                     icon="arrow_upward"
                     :disable="index === 0 || reordering"
-                    @click.stop="moveFaq(index, -1)"
+                    @click.stop="moveHelp(index, -1)"
                   >
                     <q-tooltip>Su</q-tooltip>
                   </q-btn>
@@ -69,8 +66,8 @@
                     round
                     dense
                     icon="arrow_downward"
-                    :disable="index === visibleFaqs.length - 1 || reordering"
-                    @click.stop="moveFaq(index, 1)"
+                    :disable="index === visibleHelps.length - 1 || reordering"
+                    @click.stop="moveHelp(index, 1)"
                   >
                     <q-tooltip>Giu</q-tooltip>
                   </q-btn>
@@ -78,13 +75,11 @@
                     flat
                     round
                     dense
-                    :icon="faq.hidden ? 'visibility' : 'visibility_off'"
+                    :icon="help.hidden ? 'visibility' : 'visibility_off'"
                     color="warning"
-                    @click.stop="toggleHidden(faq)"
+                    @click.stop="toggleHidden(help)"
                   >
-                    <q-tooltip>{{
-                      faq.hidden ? t("faq.show") : t("faq.hide")
-                    }}</q-tooltip>
+                    <q-tooltip>{{ help.hidden ? t('faq.show') : t('faq.hide') }}</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
@@ -92,9 +87,9 @@
                     dense
                     icon="edit"
                     color="primary"
-                    @click.stop="openDialog(faq)"
+                    @click.stop="openDialog(help)"
                   >
-                    <q-tooltip>{{ t("faq.edit") }}</q-tooltip>
+                    <q-tooltip>{{ t('common.edit') }}</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
@@ -102,19 +97,16 @@
                     dense
                     icon="delete"
                     color="negative"
-                    @click.stop="confirmDelete(faq)"
+                    @click.stop="confirmDelete(help)"
                   >
-                    <q-tooltip>{{ t("faq.delete") }}</q-tooltip>
+                    <q-tooltip>{{ t('common.delete') }}</q-tooltip>
                   </q-btn>
                 </template>
               </div>
             </template>
 
-            <div
-              class="q-pa-md text-body1"
-              :class="{ 'faq-text--hidden': faq.hidden }"
-            >
-              {{ getBilingual(faq, "answer") }}
+            <div class="q-pa-md text-body1" :class="{ 'faq-text--hidden': help.hidden }">
+              {{ getBilingual(help, 'body') }}
             </div>
           </q-expansion-item>
         </q-list>
@@ -125,39 +117,37 @@
       <q-card class="dialog-card-large">
         <q-card-section>
           <div class="text-h6">
-            {{ editingFaq ? t("faq.edit") : t("faq.add") }}
+            {{ editingHelp ? t('common.edit') : t('common.add') }}
           </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none q-gutter-sm">
           <q-input
-            v-model="form.question"
-            :label="t('faq.question')"
-            type="textarea"
+            v-model="form.title"
+            :label="t('help.sectionTitle')"
+            type="text"
             outlined
             dense
             autofocus
-            rows="2"
           />
           <q-input
-            v-model="form.questionEn"
-            :label="t('faq.questionEn')"
-            type="textarea"
+            v-model="form.titleEn"
+            :label="t('help.sectionTitleEn')"
+            type="text"
             outlined
             dense
-            rows="2"
           />
           <q-input
-            v-model="form.answer"
-            :label="t('faq.answer')"
+            v-model="form.body"
+            :label="t('help.sectionBody')"
             type="textarea"
             outlined
             dense
             rows="4"
           />
           <q-input
-            v-model="form.answerEn"
-            :label="t('faq.answerEn')"
+            v-model="form.bodyEn"
+            :label="t('help.sectionBodyEn')"
             type="textarea"
             outlined
             dense
@@ -166,13 +156,13 @@
           <q-toggle
             v-if="isAdmin"
             v-model="form.hidden"
-            :label="t('faq.hidden')"
+            :label="t('help.hidden')"
           />
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat :label="t('common.cancel')" @click="closeDialog" />
-          <q-btn color="primary" :label="t('common.save')" @click="saveFaq" />
+          <q-btn color="primary" :label="t('common.save')" @click="saveHelp" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -180,19 +170,19 @@
     <q-dialog v-model="confirmDeleteDialog" persistent>
       <q-card class="dialog-card-medium">
         <q-card-section>
-          <div class="text-h6">{{ t("faq.delete") }}</div>
+          <div class="text-h6">{{ t('common.delete') }}</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <div>{{ t("faq.deleteConfirm") }}</div>
-          <div v-if="faqToDelete" class="text-subtitle2 q-mt-sm">
-            "{{ getBilingual(faqToDelete, 'question') }}"
+          <div>{{ t('help.deleteConfirm') }}</div>
+          <div v-if="helpToDelete" class="text-subtitle2 q-mt-sm">
+            "{{ getBilingual(helpToDelete, 'title') }}"
           </div>
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat :label="t('common.cancel')" @click="cancelDelete" />
-          <q-btn color="negative" :label="t('faq.delete')" @click="deleteFaqConfirmed" />
+          <q-btn color="negative" :label="t('common.delete')" @click="deleteHelpConfirmed" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -207,10 +197,10 @@ import { useFirestore } from "src/composables/useFirestore.js";
 import { useI18n } from "src/composables/useI18n.js";
 
 const createEmptyForm = () => ({
-  question: "",
-  questionEn: "",
-  answer: "",
-  answerEn: "",
+  title: "",
+  titleEn: "",
+  body: "",
+  bodyEn: "",
   hidden: false,
 });
 
@@ -219,28 +209,28 @@ export default {
     const $q = useQuasar();
     const { isAdmin } = useAuth();
     const {
-      getFaqs,
-      getFaqsListener,
-      createFaq,
-      updateFaq,
-      deleteFaq: deleteFaqService,
-      reorderFaqs,
+      getHelps,
+      getHelpsListener,
+      createHelp,
+      updateHelp,
+      deleteHelp,
+      reorderHelps,
     } = useFirestore();
     const { t, locale } = useI18n();
 
     const loading = ref(true);
     const reordering = ref(false);
-    const faqs = ref([]);
+    const helps = ref([]);
     const showDialog = ref(false);
     const confirmDeleteDialog = ref(false);
-    const faqToDelete = ref(null);
-    const editingFaq = ref(null);
+    const helpToDelete = ref(null);
+    const editingHelp = ref(null);
     const form = ref(createEmptyForm());
 
     let unsubscribe = null;
 
-    const visibleFaqs = computed(() =>
-      isAdmin.value ? faqs.value : faqs.value.filter((faq) => !faq.hidden)
+    const visibleHelps = computed(() =>
+      isAdmin.value ? helps.value : helps.value.filter((help) => !help.hidden)
     );
 
     const getBilingual = (row, field) => {
@@ -251,15 +241,15 @@ export default {
       return row[field] || "";
     };
 
-    const openDialog = (faq = null) => {
-      editingFaq.value = faq;
-      form.value = faq
+    const openDialog = (help = null) => {
+      editingHelp.value = help;
+      form.value = help
         ? {
-            question: faq.question || "",
-            questionEn: faq.questionEn || "",
-            answer: faq.answer || "",
-            answerEn: faq.answerEn || "",
-            hidden: faq.hidden === true,
+            title: help.title || "",
+            titleEn: help.titleEn || "",
+            body: help.body || "",
+            bodyEn: help.bodyEn || "",
+            hidden: help.hidden === true,
           }
         : createEmptyForm();
       showDialog.value = true;
@@ -267,12 +257,12 @@ export default {
 
     const closeDialog = () => {
       showDialog.value = false;
-      editingFaq.value = null;
+      editingHelp.value = null;
       form.value = createEmptyForm();
     };
 
-    const saveFaq = async () => {
-      if (!form.value.question || !form.value.answer) {
+    const saveHelp = async () => {
+      if (!form.value.title || !form.value.body) {
         $q.notify({
           type: "warning",
           message: t("faq.validationRequired"),
@@ -281,111 +271,85 @@ export default {
       }
 
       try {
-        if (editingFaq.value) {
-          await updateFaq(editingFaq.value.id, form.value);
+        if (editingHelp.value) {
+          await updateHelp(editingHelp.value.id, form.value);
         } else {
-          await createFaq(form.value);
+          await createHelp(form.value);
         }
         $q.notify({
           type: "positive",
-          message: t("faq.saved"),
+          message: t("help.saved"),
         });
         closeDialog();
       } catch (error) {
-        console.error("Error saving FAQ:", error);
+        console.error("Error saving help content:", error);
         $q.notify({
           type: "negative",
-          message: t("faq.saveError"),
+          message: t("help.saveError"),
         });
       }
     };
 
-    const confirmDelete = (faq) => {
-      faqToDelete.value = faq;
+    const confirmDelete = (help) => {
+      helpToDelete.value = help;
       confirmDeleteDialog.value = true;
     };
 
     const cancelDelete = () => {
-      faqToDelete.value = null;
+      helpToDelete.value = null;
       confirmDeleteDialog.value = false;
     };
 
-    const deleteFaqConfirmed = async () => {
-      if (!faqToDelete.value) {
+    const deleteHelpConfirmed = async () => {
+      if (!helpToDelete.value) {
         cancelDelete();
         return;
       }
 
       try {
-        await deleteFaqService(faqToDelete.value.id);
+        await deleteHelp(helpToDelete.value.id);
         $q.notify({
           type: "positive",
-          message: t("faq.deleted"),
+          message: t("help.deleted"),
         });
       } catch (error) {
-        console.error("Error deleting FAQ:", error);
+        console.error("Error deleting help content:", error);
         $q.notify({
           type: "negative",
-          message: t("faq.deleteError"),
+          message: t("help.deleteError"),
         });
       } finally {
         cancelDelete();
       }
     };
 
-    const toggleHidden = async (faq) => {
+    const toggleHidden = async (help) => {
       try {
-        await updateFaq(faq.id, {
-          question: faq.question,
-          questionEn: faq.questionEn,
-          answer: faq.answer,
-          answerEn: faq.answerEn,
-          hidden: !faq.hidden,
-          order: faq.order,
-        });
-        $q.notify({
-          type: "positive",
-          message: t("faq.visibilityUpdated"),
-        });
+        await updateHelp(help.id, { hidden: !help.hidden });
       } catch (error) {
-        console.error("Error updating FAQ visibility:", error);
+        console.error("Error toggling help hidden state:", error);
         $q.notify({
           type: "negative",
-          message: t("faq.visibilityError"),
+          message: t("help.saveError"),
         });
       }
     };
 
-    const moveFaq = async (index, direction) => {
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= visibleFaqs.value.length) {
+    const moveHelp = async (index, direction) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= visibleHelps.value.length) {
         return;
       }
-
-      const reorderedFaqs = [...faqs.value];
-      const sourceFaq = visibleFaqs.value[index];
-      const targetFaq = visibleFaqs.value[targetIndex];
-      const sourceIndex = reorderedFaqs.findIndex((faq) => faq.id === sourceFaq.id);
-      const destinationIndex = reorderedFaqs.findIndex(
-        (faq) => faq.id === targetFaq.id
-      );
-
-      if (sourceIndex === -1 || destinationIndex === -1) {
-        return;
-      }
-
-      const [movedFaq] = reorderedFaqs.splice(sourceIndex, 1);
-      reorderedFaqs.splice(destinationIndex, 0, movedFaq);
 
       reordering.value = true;
+      const reordered = [...helps.value];
+      const [item] = reordered.splice(index, 1);
+      reordered.splice(nextIndex, 0, item);
+
       try {
-        await reorderFaqs(reorderedFaqs);
-        $q.notify({
-          type: "positive",
-          message: t("faq.reordered"),
-        });
+        await reorderHelps(reordered);
       } catch (error) {
-        console.error("Error reordering FAQs:", error);
+        console.error("Error reordering help content:", error);
         $q.notify({
           type: "negative",
           message: t("faq.reorderError"),
@@ -395,65 +359,46 @@ export default {
       }
     };
 
-    const refreshData = async () => {
-      loading.value = true;
-      try {
-        faqs.value = await getFaqs();
-      } catch (error) {
-        console.error("Error loading FAQs:", error);
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    onMounted(() => {
-      refreshData();
-
-      unsubscribe = getFaqsListener(
-        (newFaqs) => {
-          faqs.value = newFaqs;
+    onMounted(async () => {
+      unsubscribe = getHelpsListener(
+        (updatedHelps) => {
+          helps.value = updatedHelps;
+          loading.value = false;
         },
         (error) => {
-          console.error("Error in FAQs listener:", error);
+          console.error("Help listener error:", error);
+          loading.value = false;
         }
       );
     });
 
     onUnmounted(() => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     });
 
     return {
-      loading,
-      reordering,
-      faqs,
-      visibleFaqs,
+      t,
       isAdmin,
+      loading,
+      visibleHelps,
       showDialog,
       confirmDeleteDialog,
-      editingFaq,
+      helpToDelete,
+      editingHelp,
       form,
-      getBilingual,
       openDialog,
       closeDialog,
-      saveFaq,
+      saveHelp,
       confirmDelete,
       cancelDelete,
-      deleteFaqConfirmed,
+      deleteHelpConfirmed,
+      getBilingual,
       toggleHidden,
-      moveFaq,
-      t,
+      moveHelp,
+      reordering,
     };
   },
 };
 </script>
-
-<style scoped>
-.faq-item--hidden {
-  opacity: 0.75;
-}
-
-.faq-text--hidden {
-  text-decoration: line-through;
-}
-</style>

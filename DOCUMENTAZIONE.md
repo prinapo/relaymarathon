@@ -9,7 +9,7 @@ Funzionalita' principali:
 - gestione squadre e partecipanti
 - associazione a una gara
 - calcolo tempi per tappa
-- appuntamenti e FAQ bilingui
+- appuntamenti, FAQ e help bilingui
 - area admin per la gestione dei contenuti
 
 ## Stack
@@ -25,7 +25,7 @@ Riferimenti nel repo:
 
 - [package.json](/c:/Users/giova/quasar/mm26/package.json)
 - [quasar.conf.js](/c:/Users/giova/quasar/mm26/quasar.conf.js)
-- [capacitor.config.json](/c:/Users/giova/quasar/mm26/capacitor.config.json)
+- [capacitor.config.json](/c:/Users/giova/quasar/mm26/src-capacitor/capacitor.config.json)
 
 ## Configurazione attuale
 
@@ -39,7 +39,7 @@ Riferimenti nel repo:
 
 ### Capacitor
 
-Configurazione root attuale:
+Configurazione attuale:
 
 ```json
 {
@@ -51,8 +51,8 @@ Configurazione root attuale:
 
 Nota importante:
 
-- il progetto usa come unica sorgente nativa le cartelle `android/` e `ios/` in root
-- `capacitor.config.json` in root e i progetti nativi root sono la fonte di verita' per build, plugin e asset
+- il progetto usa la struttura standard Quasar + Capacitor in `src-capacitor/`
+- `src-capacitor/capacitor.config.json` e i progetti nativi dentro `src-capacitor/` sono la fonte di verita' per build, plugin e asset
 
 ## Struttura del progetto
 
@@ -86,14 +86,16 @@ mm26/
 |   |-- assets/
 |   |-- App.vue
 |   `-- firebase.js
-|-- android/
-|-- ios/
+|-- src-capacitor/
+|   |-- android/
+|   |-- ios/
+|   |-- capacitor.config.json
+|   `-- package.json
 |-- src-pwa/
 |-- scripts/
 |-- public/
 |-- firestore.rules
 |-- quasar.conf.js
-|-- capacitor.config.json
 `-- package.json
 ```
 
@@ -107,6 +109,7 @@ Pagine presenti:
 - `/admin` -> area amministrativa, route protetta e admin-only
 - `/appointments` -> appuntamenti
 - `/faq` -> FAQ
+- `/help` -> help
 - `/route` -> percorso
 - `/splash` -> splash iniziale
 - `/login` -> login
@@ -176,8 +179,8 @@ Dipendenze/config coinvolte:
 
 - [src/composables/useAuth.js](/c:/Users/giova/quasar/mm26/src/composables/useAuth.js)
 - [package.json](/c:/Users/giova/quasar/mm26/package.json)
-- [capacitor.config.json](/c:/Users/giova/quasar/mm26/capacitor.config.json)
-- [ios/App/App/AppDelegate.swift](/c:/Users/giova/quasar/mm26/ios/App/App/AppDelegate.swift)
+- [capacitor.config.json](/c:/Users/giova/quasar/mm26/src-capacitor/capacitor.config.json)
+- [AppDelegate.swift](/c:/Users/giova/quasar/mm26/src-capacitor/ios/App/App/AppDelegate.swift)
 
 Stato attuale verificato:
 
@@ -204,7 +207,7 @@ Durante il debug del login Google Android sono emersi tre punti importanti:
 - la causa reale era un mismatch tra la SHA-1 registrata in Firebase e la SHA-1 usata davvero dall'APK debug installato
 - Gradle stava firmando l'app con `C:\Android\.android\debug.keystore` per via dell'ambiente locale (`ANDROID_SDK_HOME=C:\Android`)
 - il progetto Firebase era invece allineato alla keystore `C:\Users\giova\.android\debug.keystore`
-- per rendere stabile la build debug, [android/app/build.gradle](/c:/Users/giova/quasar/mm26/android/app/build.gradle) forza esplicitamente la signing config debug verso la keystore dentro `USERPROFILE`
+- per rendere stabile la build debug, [build.gradle](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle) forza esplicitamente la signing config debug verso la keystore dentro `USERPROFILE`
 
 SHA-1 corretta attesa dal progetto Firebase:
 
@@ -228,7 +231,7 @@ Attenzione:
 
 3. MainActivity Android
 
-- e' stato necessario implementare l'interfaccia richiesta dal plugin social login in [android/app/src/main/java/com/prinapo/relaymarathon/MainActivity.java](/c:/Users/giova/quasar/mm26/android/app/src/main/java/com/prinapo/relaymarathon/MainActivity.java)
+- e' stato necessario implementare l'interfaccia richiesta dal plugin social login in [MainActivity.java](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/src/main/java/com/prinapo/relaymarathon/MainActivity.java)
 - questo non dipende da Quasar in astratto, ma dal fatto che Capacitor delega alcune integrazioni ai progetti nativi reali `android/` e `ios/`
 - quando un plugin richiede hook nativi, la sola configurazione Quasar non basta
 
@@ -236,7 +239,7 @@ Attenzione:
 
 - package name atteso: `com.prinapo.relaymarathon`
 - `google-services.json` e' presente in root del repo
-- per la build Android il file viene letto anche dal progetto nativo tramite [android/app/build.gradle](/c:/Users/giova/quasar/mm26/android/app/build.gradle)
+- per la build Android il file viene letto anche dal progetto nativo tramite [build.gradle](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle)
 
 ### Admin
 
@@ -260,6 +263,7 @@ Riassunto ad oggi:
 - `config`: lettura pubblica, scrittura solo admin
 - `appointments`: lettura pubblica, CRUD solo admin
 - `faq`: lettura pubblica, CRUD solo admin
+- `help`: lettura pubblica, CRUD solo admin
 
 Questa e' la fonte corretta da mantenere allineata:
 
@@ -273,6 +277,7 @@ Le collection esplicitamente usate da `useFirestore.js` sono:
 - `teams`
 - `appointments`
 - `faq`
+- `help`
 - `users`
 
 ### `races`
@@ -380,35 +385,153 @@ Output web atteso:
 
 ## Build mobile con Capacitor
 
-Per questo repo conviene pensare il flusso in due passaggi:
+Per questo repo il comando corretto da usare e' quello Quasar sulla struttura standard `src-capacitor/`.
 
-1. build web Quasar in `dist/spa`
-2. build/sync del progetto nativo Capacitor
+Il flusso reale e' questo:
+
+1. Quasar compila la UI web
+2. Quasar sincronizza `src-capacitor/android`
+3. Gradle produce l'APK debug o release
+
+Non usare la vecchia struttura `android/` in root: Quasar non la considera valida per `-m capacitor` e puo' chiedere interattivamente l'`appId`.
 
 ### Android debug
 
 ```bash
-npx quasar build -m capacitor -T android -d
+quasar build -m capacitor -T android -debug
+```
+
+APK generato:
+
+```text
+dist/capacitor/android/apk/debug/app-debug.apk
+```
+
+Installazione sul telefono collegato:
+
+```bash
+adb devices
+adb -s <DEVICE_ID> install -r dist\capacitor\android\apk\debug\app-debug.apk
+```
+
+Esempio reale verificato:
+
+```bash
+adb -s 000881487000268 install -r dist\capacitor\android\apk\debug\app-debug.apk
 ```
 
 ### Android release
 
 ```bash
-npx quasar build -m capacitor -T android
+quasar build -m capacitor -T android
 ```
+
+Per il caricamento su Google Play, dopo il build Quasar genera il bundle firmato con:
+
+```bash
+cd src-capacitor\android
+.\gradlew.bat bundleRelease
+```
+
+Output atteso:
+
+```text
+src-capacitor/android/app/build/outputs/bundle/release/app-release.aab
+```
+
+### Script guidato release Android
+
+Per evitare di aggiornare a mano versione e build, usa:
+
+```bash
+npm run release:android
+```
+
+Lo script [release-android.ps1](/c:/Users/giova/quasar/mm26/scripts/release-android.ps1):
+
+1. legge la versione corrente da [build.gradle](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle)
+2. chiede se il rilascio e' `minor` o `major`
+3. incrementa automaticamente `versionCode`
+4. aggiorna `versionName` Android
+5. allinea anche `version` in [package.json](/c:/Users/giova/quasar/mm26/package.json)
+6. esegue `quasar build -m capacitor -T android`
+7. esegue `.\gradlew.bat bundleRelease`
+8. mostra il percorso finale dell'AAB
+
+Regole di incremento:
+
+- `minor`: `1.2.0` -> `1.3.0`
+- `major`: `1.2.0` -> `2.0.0`
+- `versionCode`: sempre `+1`
+
+Uso pratico:
+
+```bash
+npm run release:android
+```
+
+Poi:
+
+- scegli `1` o `minor` per una minor release
+- scegli `2` o `major` per una major release
+- conferma con `y`
 
 ### iOS
 
 ```bash
-npx quasar build -m capacitor -T ios
+quasar build -m capacitor -T ios
 ```
 
 Note pratiche:
 
 - la build web viene gia' eseguita da Quasar nel flusso Capacitor
 - gli artefatti finali Android/iOS dipendono dal progetto nativo e dai tool di piattaforma
-- se serve l'APK/AAB finale, il riferimento piu' affidabile e' la cartella output del progetto Android, non `dist/spa`
+- se serve l'APK finale debug, il riferimento pratico e' [app-debug.apk](/c:/Users/giova/quasar/mm26/dist/capacitor/android/apk/debug/app-debug.apk)
+- se serve un upload per Google Play, il file da caricare e' l'AAB release, non l'APK debug
+- Quasar usa `src-capacitor/android` come progetto nativo reale durante il build
 - per iOS serve macOS con Xcode
+
+### Firma release Android
+
+La build `bundleRelease` ora legge i dati firma in uno di questi due modi:
+
+1. file `keystore.properties` in root progetto
+2. variabili d'ambiente `ANDROID_RELEASE_STORE_FILE`, `ANDROID_RELEASE_STORE_PASSWORD`, `ANDROID_RELEASE_KEY_ALIAS`, `ANDROID_RELEASE_KEY_PASSWORD`
+
+Template iniziale:
+
+- [keystore.properties.example](/c:/Users/giova/quasar/mm26/src-capacitor/android/keystore.properties.example)
+
+Esempio:
+
+```properties
+storeFile=mm26-upload.keystore
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME
+```
+
+Note pratiche:
+
+- `storeFile` viene cercato prima in root progetto
+- [keystore.properties](/c:/Users/giova/quasar/mm26/keystore.properties) e i file `.jks` o `.keystore` sono ignorati da Git
+- se la firma release non e' configurata, `bundleRelease` fallisce con un messaggio esplicito
+
+Configurazione locale attuale:
+
+- keystore: `mm26-upload.keystore` in root progetto
+- alias: `upload`
+- proprieta': [keystore.properties](/c:/Users/giova/quasar/mm26/keystore.properties)
+
+### Flusso Google Play
+
+1. aggiorna la versione con `npm run release:android` oppure a mano
+2. prepara la upload keystore locale
+3. verifica [keystore.properties](/c:/Users/giova/quasar/mm26/keystore.properties) in root progetto
+4. esegui `npm run release:android` oppure il flusso manuale `quasar build -m capacitor -T android` + `bundleRelease`
+5. verifica l'output [app-release.aab](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build/outputs/bundle/release/app-release.aab)
+6. carica [app-release.aab](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build/outputs/bundle/release/app-release.aab) su Google Play Console
+7. completa scheda store, Data safety, content rating e release notes
 
 ### Script wrapper presenti
 
@@ -426,6 +549,7 @@ Sono utili come scorciatoie locali, ma la documentazione principale deve continu
 Dopo modifiche a plugin Capacitor o alla configurazione nativa, eseguire:
 
 ```bash
+cd src-capacitor
 npx cap sync
 ```
 
@@ -449,9 +573,9 @@ Prima di usarlo:
 
 ### Note operative su IconGenie
 
-In passato il repo aveva una doppia struttura Capacitor e IconGenie scriveva in `src-capacitor/`, creando confusione.
+In passato il repo aveva una doppia struttura Capacitor e questo creava confusione.
 
-Questa situazione e' stata ripulita: oggi il riferimento operativo e' solo il progetto nativo root.
+Questa situazione e' stata ripulita: oggi il riferimento operativo corretto e' `src-capacitor/`.
 
 Resta comunque importante sapere due cose:
 
@@ -464,37 +588,37 @@ Resta comunque importante sapere due cose:
 node node_modules/@quasar/icongenie/bin/icongenie.js generate -m capacitor -f png -i src/assets/icona_app_safe.png --skip-trim
 ```
 
-2. output generato nella cartella sbagliata rispetto al progetto nativo attivo
+2. output generato nella cartella giusta del progetto nativo attivo
 
-- dopo la pulizia strutturale, gli asset app devono essere considerati validi solo se presenti nei progetti nativi root
+- dopo la pulizia strutturale, gli asset app devono essere considerati validi solo se presenti nei progetti nativi dentro `src-capacitor/`
 - l'asset sorgente da usare per l'icona launcher e' [src/assets/icona_app_safe.png](/c:/Users/giova/quasar/mm26/src/assets/icona_app_safe.png)
 - [quasar.conf.js](/c:/Users/giova/quasar/mm26/quasar.conf.js) punta ora a `icona_app_safe.png` per i path icona Capacitor
 
 Nota pratica:
 
 - Quasar/IconGenie funziona bene quando la struttura del progetto e' coerente e c'e' un solo target Capacitor chiaro
-- in questo repo il target Capacitor da considerare e' soltanto quello root
+- in questo repo il target Capacitor da considerare e' soltanto [src-capacitor](/c:/Users/giova/quasar/mm26/src-capacitor)
 
 ## Modifica nome app e versione
 
 Punti da aggiornare quando cambia il branding:
 
-- [capacitor.config.json](/c:/Users/giova/quasar/mm26/capacitor.config.json) per `appId`, `appName`, `webDir`
+- [capacitor.config.json](/c:/Users/giova/quasar/mm26/src-capacitor/capacitor.config.json) per `appId`, `appName`, `webDir`
 - [package.json](/c:/Users/giova/quasar/mm26/package.json) per `version`
-- [android/app/build.gradle](/c:/Users/giova/quasar/mm26/android/app/build.gradle) per `applicationId`, `versionCode`, `versionName`
+- [build.gradle](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle) per `applicationId`, `versionCode`, `versionName`
 - progetto iOS/Xcode per marketing version, build number e bundle identifier
-- [ios/App/App/Info.plist](/c:/Users/giova/quasar/mm26/ios/App/App/Info.plist) per il display name se necessario
+- [Info.plist](/c:/Users/giova/quasar/mm26/src-capacitor/ios/App/App/Info.plist) per il display name se necessario
 
 Attenzione:
 
 - oggi `package.json` riporta `0.0.1`
-- oggi `android/app/build.gradle` riporta `versionName "1.0"`
+- oggi `src-capacitor/android/app/build.gradle` riporta `versionName "1.0"`
 - questa differenza e' reale nel repo e andrebbe allineata quando si prepara una release
 
 ## Note operative
 
 - non fidarti di documentazione vecchia sulle Firestore Rules: usa sempre [firestore.rules](/c:/Users/giova/quasar/mm26/firestore.rules)
-- i progetti nativi reali sono [android](/c:/Users/giova/quasar/mm26/android) e [ios](/c:/Users/giova/quasar/mm26/ios)
+- i progetti nativi reali sono [src-capacitor/android](/c:/Users/giova/quasar/mm26/src-capacitor/android) e [src-capacitor/ios](/c:/Users/giova/quasar/mm26/src-capacitor/ios)
 - l'admin viene deciso dalle custom claims
 - il progetto supporta sia web sia mobile, ma il flusso di release mobile dipende dai tool nativi di Android Studio e Xcode
 - la patch al plugin Google Android non e' piu' "nascosta" in `node_modules`: e' tracciata in `patches/` e viene riapplicata in `postinstall`
@@ -502,15 +626,15 @@ Attenzione:
 
 ## TODO
 
-- allineare `package.json` e `android/app/build.gradle` sulla stessa versione di release
+- allineare `package.json` e `src-capacitor/android/app/build.gradle` sulla stessa versione di release
 - aggiungere in `.env` i valori `VITE_GOOGLE_WEB_CLIENT_ID`, `VITE_GOOGLE_IOS_CLIENT_ID` e `VITE_GOOGLE_IOS_SERVER_CLIENT_ID`
 - verificare in Firebase Console che il provider Google sia abilitato
 - verificare in Firebase Console che il client web OAuth corrisponda al `webClientId` usato dall'app
 - decidere come mantenere la patch locale al plugin `@capgo/capacitor-social-login`:
 - stato attuale: gestita con `patch-package`
 - obiettivo futuro: sostituire la patch con una soluzione ufficiale del plugin
-- documentare stabilmente la keystore debug attesa per Android e il motivo del forcing in [android/app/build.gradle](/c:/Users/giova/quasar/mm26/android/app/build.gradle)
-- completare la configurazione iOS con URL scheme Google in [Info.plist](/c:/Users/giova/quasar/mm26/ios/App/App/Info.plist)
+- documentare stabilmente la keystore debug attesa per Android e il motivo del forcing in [build.gradle](/c:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle)
+- completare la configurazione iOS con URL scheme Google in [Info.plist](/c:/Users/giova/quasar/mm26/src-capacitor/ios/App/App/Info.plist)
 - testare login Google su web in ambiente locale
 - testare login Google su device Android reale con account Google presente sul device
 - testare logout Google + Firebase su web e Android
