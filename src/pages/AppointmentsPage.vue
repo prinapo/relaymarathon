@@ -188,7 +188,7 @@
             {{ getBilingual(selectedAppointment, "title") }}
           </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn v-close-popup icon="close" flat round dense />
         </q-card-section>
 
         <q-card-section>
@@ -226,18 +226,18 @@
           </div>
         </q-card-section>
 
-        <q-card-actions align="right" v-if="isAdmin">
+        <q-card-actions v-if="isAdmin" align="right">
           <q-btn
             flat
             :label="t('appointments.edit')"
-            @click="editFromDetails"
             color="primary"
+            @click="editFromDetails"
           />
           <q-btn
             flat
             :label="t('appointments.delete')"
-            @click="confirmDeleteFromDetails"
             color="negative"
+            @click="confirmDeleteFromDetails"
           />
         </q-card-actions>
       </q-card>

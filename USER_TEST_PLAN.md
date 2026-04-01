@@ -2,6 +2,64 @@
 
 Questa checklist completa serve per verificare i flussi principali dell'app lato utente e admin.
 
+## Playwright E2E Tests
+
+Il progetto include test E2E con Playwright. Struttura:
+
+```
+tests/e2e/
+  └── login.spec.js    # Test login, home, team
+```
+
+### Account di test
+
+```
+# Account 1 (captain)
+prova@gmail.com
+prova_prova
+
+# Account 2 (runner)
+riprova@gmail.com
+riprova!!
+```
+
+### Gara di test
+
+- Nome: `test`
+- Luogo: `test`
+- Data: `2026-04-01`
+- Orario: `08:00`
+- Tappe: 3 (2 solo, 1 group)
+
+### Comandi
+
+```bash
+# Installa browser Playwright
+npx playwright install chromium
+
+# Esegui tutti i test
+npx playwright test
+
+# Esegui test specifici
+npx playwright test tests/e2e/login.spec.js
+npx playwright test tests/e2e/home.spec.js
+npx playwright test tests/e2e/team.spec.js
+npx playwright test tests/e2e/admin.spec.js
+
+# Esegui con UI interattiva
+npx playwright test --ui
+
+# Esegui con debug
+npx playwright test --debug
+```
+
+### Note
+
+- I test richiedono che `npm run dev` sia attivo (porta 9000)
+- Playwright configurato in `playwright.config.js`
+- Alcuni test dipendono da dati reali (gare, team) nel database
+- I test di login richiedono account di test pre-creati
+
 ## Stato attuale
 
 Aggiornato al `2026-03-26`.

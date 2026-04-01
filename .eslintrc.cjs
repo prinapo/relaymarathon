@@ -17,6 +17,7 @@ module.exports = {
     "dist/**",
     ".quasar/**",
     "src-capacitor/**",
+    "src-pwa/**",
   ],
   globals: {
     ga: "readonly",

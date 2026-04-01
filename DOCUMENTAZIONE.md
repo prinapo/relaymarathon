@@ -640,6 +640,62 @@ Attenzione:
 - testare logout Google + Firebase su web e Android
 - verificare che dopo il login vengano lette correttamente le custom claims admin
 
+## Team Management (IndexPage)
+
+### Popup di editing segmenti
+
+Il popup di dettaglio segmento (in [IndexPage.vue](/c:/Users/giova/quasar/mm26/src/pages/IndexPage.vue)) permette al capitano di:
+
+1. **Modificare nome team** - campo visibile solo per captain, salva immediatamente su Firestore
+2. **Modificare nome runner** - per segmenti di tipo `solo`
+3. **Modificare pace** - per tutti i segmenti, espresso in minuti:secondi
+4. **Modificare pace di gruppo** - per segmenti di tipo `group`, visibile solo per captain
+
+### Logica di assegnazione segmenti
+
+Il popup mostra diversi pulsanti in base allo stato di assegnazione del segmento:
+
+| Stato              | Pulsanti visibili (captain)             |
+| ------------------ | --------------------------------------- |
+| Non assegnato      | "Assegna a me" + "Invita"               |
+| Assegnato a me     | "Disassegna"                            |
+| Assegnato ad altri | "Assegna a me" + "Invita" (con warning) |
+
+**Nota**: Il limite di un solo segmento per capitano e' stato rimosso. Un capitano puo' ora assegnarsi a piu' segmenti.
+
+### Funzione inviteRunner
+
+La funzione `inviteRunner` (in [IndexPage.vue](src/pages/IndexPage.vue)) gestisce l'intero flusso di invito:
+
+1. Se esiste gia' un codice di invito per il segmento, mostra un dialog di conferma che avverte che il runner precedente sara' rimosso
+2. Genera un nuovo codice di invito
+3. Copia automaticamente il codice negli appunti per la condivisione
+
+### Indicatore visivo segmenti assegnati
+
+I segmenti assegnati al captain sono identificati nella tabella principale tramite un'icona verde (funzione `getSegmentColor` in [IndexPage.vue](src/pages/IndexPage.vue)).
+
+### Team selezionabile in home
+
+Il dropdown di selezione team nella home e' ora visibile quando l'utente ha almeno un team, indipendentemente dal numero di team posseduti.
+
+### TeamPage semplificata
+
+[TeamPage.vue](/c:/Users/giova/quasar/mm26/src/pages/TeamPage.vue) mostra ora solo:
+
+- Info team (nome, ID, data creazione)
+- Pulsante per eliminare il team
+- Rimosso: tabella di assegnazione segmenti (spostata nel popup IndexPage)
+
+### Tradizioni
+
+Sono state aggiunte le seguenti chiavi di traduzione (in [defaultTranslations.js](/c:/Users/giova/quasar/mm26/src/composables/defaultTranslations.js)):
+
+- `team.invite` - "Invita"
+- `team.inviteReplaceTitle` - Titolo dialog sostituzione invito
+- `team.inviteReplaceBody` - Messaggio dialog sostituzione invito
+- `team.runner` - "Runner"
+
 ## Checklist test
 
 - web: apertura pagina login

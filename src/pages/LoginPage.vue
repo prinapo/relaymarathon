@@ -63,9 +63,21 @@
       </q-card-section>
 
       <q-card-section v-else-if="view === 'signup'" class="q-pt-none">
-        <div class="text-body2 q-mb-md">
-          {{ email }}
-        </div>
+        <q-input
+          v-model="email"
+          :label="t('login.email')"
+          type="email"
+          outlined
+          dense
+          :error="!!errors.email"
+          :error-message="errors.email"
+          class="q-mb-sm"
+          @keyup.enter="handleSignUp"
+        >
+          <template #prepend>
+            <q-icon name="email" color="grey" />
+          </template>
+        </q-input>
         <q-input
           v-model="password"
           :label="t('login.password')"
@@ -395,6 +407,11 @@ export default {
     const handleSignUp = async () => {
       error.value = "";
       errors.value = {};
+
+      if (!email.value || !validateEmail(email.value)) {
+        errors.value.email = t("login.error.email");
+        return;
+      }
 
       if (!password.value || password.value.length < 6) {
         errors.value.password = t("login.error.password");

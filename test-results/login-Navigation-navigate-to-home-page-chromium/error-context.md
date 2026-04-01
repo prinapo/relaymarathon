@@ -1,0 +1,108 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - toolbar [ref=e6]:
+      - button [ref=e7] [cursor=pointer]:
+        - img [ref=e9]: menu
+      - generic [ref=e10]: Milano Relay Marathon
+      - generic [ref=e11]: prova@gmail.com
+      - button "Esci" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Esci
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: UniCredit Relay Marathon 2026
+        - generic [ref=e20]: Non hai ancora una squadra. La home usa valori locali finche non crei o entri in un team.
+        - button "Crea Team" [ref=e21] [cursor=pointer]:
+          - generic [ref=e23]: Crea Team
+        - button "Entra nel Team" [ref=e24] [cursor=pointer]:
+          - generic [ref=e26]: Entra nel Team
+      - generic [ref=e27]:
+        - generic [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]:
+            - generic: Seleziona gara
+            - generic [ref=e33]:
+              - generic [ref=e34]: UniCredit Relay Marathon 2026
+              - combobox "Seleziona gara" [ref=e35]: UniCredit Relay Marathon 2026
+          - generic [ref=e37]: arrow_drop_down
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]: flag
+            - generic [ref=e41]: "Orario Partenza Gara:"
+            - generic [ref=e42]: 09:15
+          - generic [ref=e43]:
+            - generic [ref=e44]: schedule
+            - generic [ref=e45]: "Ritardo Partenza (min):"
+            - spinbutton [ref=e50]: "2"
+        - table [ref=e53]:
+          - rowgroup [ref=e54]:
+            - row "Tratta Ora Durata Passo" [ref=e55]:
+              - columnheader "Tratta" [ref=e56]
+              - columnheader "Ora" [ref=e57]
+              - columnheader "Durata" [ref=e58]
+              - columnheader "Passo" [ref=e59]
+          - rowgroup [ref=e60]:
+            - row "Partenza Pianificata 9:15" [ref=e61]:
+              - cell "Partenza Pianificata" [ref=e62]:
+                - generic [ref=e63]:
+                  - generic [ref=e65]: event
+                  - generic [ref=e66]: Partenza Pianificata
+              - cell "9:15" [ref=e67]
+              - cell [ref=e68]
+              - cell [ref=e69]
+            - row "Partenza Reale 9:17 2:00" [ref=e70]:
+              - cell "Partenza Reale" [ref=e71]:
+                - generic [ref=e72]:
+                  - generic [ref=e74]: play_arrow
+                  - generic [ref=e75]: Partenza Reale
+              - cell "9:17" [ref=e76]
+              - cell "2:00" [ref=e77]
+              - cell [ref=e78]
+            - row "Sempione - Pagano 10:22 1:05:00 5:00" [ref=e79]:
+              - cell "Sempione - Pagano" [ref=e80]:
+                - generic [ref=e82] [cursor=pointer]:
+                  - generic [ref=e84]: person
+                  - generic [ref=e85]: Sempione - Pagano
+              - cell "10:22" [ref=e86]
+              - cell "1:05:00" [ref=e87]
+              - cell "5:00" [ref=e88]
+            - row "Pagano - Lotto 11:11 49:00 5:00" [ref=e89]:
+              - cell "Pagano - Lotto" [ref=e90]:
+                - generic [ref=e92] [cursor=pointer]:
+                  - generic [ref=e94]: person
+                  - generic [ref=e95]: Pagano - Lotto
+              - cell "11:11" [ref=e96]
+              - cell "49:00" [ref=e97]
+              - cell "5:00" [ref=e98]
+            - row "Lotto - Uruguay 11:45 34:00 5:00" [ref=e99]:
+              - cell "Lotto - Uruguay" [ref=e100]:
+                - generic [ref=e102] [cursor=pointer]:
+                  - generic [ref=e104]: person
+                  - generic [ref=e105]: Lotto - Uruguay
+              - cell "11:45" [ref=e106]
+              - cell "34:00" [ref=e107]
+              - cell "5:00" [ref=e108]
+            - row "Urugauy - Cavour 12:48 1:03:00 5:00" [ref=e109]:
+              - cell "Urugauy - Cavour" [ref=e110]:
+                - generic [ref=e112] [cursor=pointer]:
+                  - generic [ref=e114]: person
+                  - generic [ref=e115]: Urugauy - Cavour
+              - cell "12:48" [ref=e116]
+              - cell "1:03:00" [ref=e117]
+              - cell "5:00" [ref=e118]
+            - row "Cavour - Palestro 12:50 2:00 5:00" [ref=e119]:
+              - cell "Cavour - Palestro" [ref=e120]:
+                - generic [ref=e122] [cursor=pointer]:
+                  - generic [ref=e124]: groups
+                  - generic [ref=e125]: Cavour - Palestro
+              - cell "12:50" [ref=e126]
+              - cell "2:00" [ref=e127]
+              - cell "5:00" [ref=e128]
+        - generic [ref=e129]:
+          - generic [ref=e130]: person
+          - text: Tappa individuale |
+          - generic [ref=e131]: groups
+          - text: Tappa di gruppo
+```

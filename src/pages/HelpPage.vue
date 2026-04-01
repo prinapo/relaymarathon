@@ -23,7 +23,7 @@
           v-else-if="visibleHelps.length === 0"
           class="text-center text-grey-7 q-pa-md"
         >
-          {{ t('help.noContent') }}
+          {{ t("help.noContent") }}
         </div>
 
         <q-list v-else separator>
@@ -43,10 +43,10 @@
                     class="text-h6 text-primary text-weight-bold"
                     :class="{ 'faq-text--hidden': help.hidden }"
                   >
-                    {{ getBilingual(help, 'title') }}
+                    {{ getBilingual(help, "title") }}
                   </div>
                   <div v-if="help.hidden" class="text-caption text-grey-7">
-                    {{ t('help.hidden') }}
+                    {{ t("help.hidden") }}
                   </div>
                 </div>
 
@@ -79,7 +79,9 @@
                     color="warning"
                     @click.stop="toggleHidden(help)"
                   >
-                    <q-tooltip>{{ help.hidden ? t('faq.show') : t('faq.hide') }}</q-tooltip>
+                    <q-tooltip>{{
+                      help.hidden ? t("faq.show") : t("faq.hide")
+                    }}</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
@@ -89,7 +91,7 @@
                     color="primary"
                     @click.stop="openDialog(help)"
                   >
-                    <q-tooltip>{{ t('common.edit') }}</q-tooltip>
+                    <q-tooltip>{{ t("common.edit") }}</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
@@ -99,14 +101,17 @@
                     color="negative"
                     @click.stop="confirmDelete(help)"
                   >
-                    <q-tooltip>{{ t('common.delete') }}</q-tooltip>
+                    <q-tooltip>{{ t("common.delete") }}</q-tooltip>
                   </q-btn>
                 </template>
               </div>
             </template>
 
-            <div class="q-pa-md text-body1" :class="{ 'faq-text--hidden': help.hidden }">
-              {{ getBilingual(help, 'body') }}
+            <div
+              class="q-pa-md text-body1"
+              :class="{ 'faq-text--hidden': help.hidden }"
+            >
+              {{ getBilingual(help, "body") }}
             </div>
           </q-expansion-item>
         </q-list>
@@ -117,7 +122,7 @@
       <q-card class="dialog-card-large">
         <q-card-section>
           <div class="text-h6">
-            {{ editingHelp ? t('common.edit') : t('common.add') }}
+            {{ editingHelp ? t("common.edit") : t("common.add") }}
           </div>
         </q-card-section>
 
@@ -170,19 +175,23 @@
     <q-dialog v-model="confirmDeleteDialog" persistent>
       <q-card class="dialog-card-medium">
         <q-card-section>
-          <div class="text-h6">{{ t('common.delete') }}</div>
+          <div class="text-h6">{{ t("common.delete") }}</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <div>{{ t('help.deleteConfirm') }}</div>
+          <div>{{ t("help.deleteConfirm") }}</div>
           <div v-if="helpToDelete" class="text-subtitle2 q-mt-sm">
-            "{{ getBilingual(helpToDelete, 'title') }}"
+            "{{ getBilingual(helpToDelete, "title") }}"
           </div>
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat :label="t('common.cancel')" @click="cancelDelete" />
-          <q-btn color="negative" :label="t('common.delete')" @click="deleteHelpConfirmed" />
+          <q-btn
+            color="negative"
+            :label="t('common.delete')"
+            @click="deleteHelpConfirmed"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -209,7 +218,6 @@ export default {
     const $q = useQuasar();
     const { isAdmin } = useAuth();
     const {
-      getHelps,
       getHelpsListener,
       createHelp,
       updateHelp,

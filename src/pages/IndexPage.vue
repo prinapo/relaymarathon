@@ -57,7 +57,10 @@
           />
         </div>
 
-        <div v-if="teamsForSelectedRace.length > 1" class="q-px-sm q-pb-sm">
+        <div
+          v-if="user && teamsForSelectedRace.length > 0"
+          class="q-px-sm q-pb-sm"
+        >
           <q-select
             :model-value="selectedTeamId"
             :options="teamOptions"
@@ -144,7 +147,10 @@
                 class="label-cell"
               >
                 <template v-if="props.row.editable && canEditRow(props.row)">
-                  <div class="cursor-pointer" @click.stop="openCompactSegmentEdit(props.row)">
+                  <div
+                    class="cursor-pointer"
+                    @click.stop="openCompactSegmentEdit(props.row)"
+                  >
                     <div class="row items-center">
                       <div class="icon-cell row justify-center">
                         <q-icon
@@ -154,6 +160,7 @@
                               ? 'groups'
                               : 'person'
                           "
+                          :color="getSegmentColor(props.row.segmentId)"
                           size="16px"
                         />
                       </div>
@@ -179,6 +186,7 @@
                             ? 'groups'
                             : 'person'
                         "
+                        :color="getSegmentColor(props.row.segmentId)"
                         size="16px"
                       />
                       <q-icon
@@ -215,7 +223,7 @@
                     : col.name === 'duration'
                     ? 'text-right text-caption'
                     : 'text-center text-caption',
-                  'text-nowrap'
+                  'text-nowrap',
                 ]"
               >
                 {{ col.value }}
@@ -236,8 +244,15 @@
           <q-card class="details-card flat bordered">
             <q-card-section class="q-gutter-sm">
               <div class="text-subtitle2">
-                {{ currentCompactRow?.segmentName || '' }}
+                {{ currentCompactRow?.segmentName || "" }}
               </div>
+              <q-input
+                v-if="isCaptain"
+                v-model="editDraft.teamName"
+                :label="t('team.teamName')"
+                dense
+                class="q-mb-sm"
+              />
               <q-input
                 v-if="currentCompactRow?.segmentType === 'solo'"
                 v-model="editDraft.name"
@@ -267,6 +282,89 @@
                   />
                 </div>
               </div>
+
+              <div
+                v-if="isCaptain && currentCompactRow?.segmentType === 'group'"
+                class="q-mt-sm"
+              >
+                <div class="text-caption text-grey-7 q-mb-xs">
+                  {{ t("team.teamPace") }}
+                </div>
+                <div class="row items-end q-gutter-sm pace-row">
+                  <div class="col pace-part">
+                    <q-select
+                      v-model="editDraft.groupMinutes"
+                      :options="minuteOptions"
+                      :label="t('index.min')"
+                      dense
+                      emit-value
+                      map-options
+                    />
+                  </div>
+                  <div class="col pace-part">
+                    <q-select
+                      v-model="editDraft.groupSeconds"
+                      :options="secondOptions"
+                      :label="t('index.sec')"
+                      dense
+                      emit-value
+                      map-options
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-if="selectedTeam && currentCompactRow?.segmentType === 'solo'"
+                class="q-mt-md"
+              >
+                <div class="row q-col-gutter-sm q-mb-md items-center">
+                  <q-btn
+                    v-if="isCaptain && !isAssignedToMe"
+                    :label="t('team.assignToMe')"
+                    color="positive"
+                    size="sm"
+                    @click="assignCaptainToSegment(currentCompactRow)"
+                  />
+                  <q-btn
+                    v-if="isCaptain && isAssignedToMe"
+                    :label="t('team.unassignMe')"
+                    color="negative"
+                    size="sm"
+                    @click="
+                      removeCaptainFromSpecificSegment(
+                        currentCompactRow.segmentId
+                      )
+                    "
+                  />
+                  <q-btn
+                    v-if="isCaptain && !isAssignedToMe"
+                    :label="t('team.invite')"
+                    icon="send"
+                    color="primary"
+                    size="sm"
+                    @click="inviteRunner(currentCompactRow)"
+                  />
+                </div>
+                <q-input
+                  v-if="
+                    selectedTeam?.invitationCodes?.[
+                      currentCompactRow?.segmentId
+                    ]
+                  "
+                  :model-value="
+                    selectedTeam.invitationCodes[currentCompactRow.segmentId]
+                  "
+                  :label="
+                    t('team.inviteCodeLeg', {
+                      n: currentCompactRow?.segmentName || 1,
+                    })
+                  "
+                  readonly
+                  dense
+                  outlined
+                />
+              </div>
             </q-card-section>
 
             <q-card-actions align="right">
@@ -281,6 +379,31 @@
                 :label="t('index.save')"
                 color="primary"
                 @click="saveCompactSegmentEdit"
+              />
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
+
+        <q-dialog v-model="confirmRegenerateDialog" persistent>
+          <q-card class="dialog-card">
+            <q-card-section class="text-h6">
+              {{ t("team.confirmRegenerateTitle") }}
+            </q-card-section>
+            <q-card-section>
+              {{ t("team.confirmRegenerateBody", { name: runnerToRemove }) }}
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn
+                flat
+                :label="t('index.cancel')"
+                color="primary"
+                @click="confirmRegenerateDialog = false"
+              />
+              <q-btn
+                flat
+                :label="t('team.generateCode')"
+                color="negative"
+                @click="confirmAndGenerateCode"
               />
             </q-card-actions>
           </q-card>
@@ -345,9 +468,19 @@ export default {
     const teams = ref([]);
     const races = ref([]);
     const setupValues = ref({ startDelay: 0, segmentConfigs: {} });
-    const editDraft = ref({ name: "", minutes: 5, seconds: 0 });
+    const editDraft = ref({
+      name: "",
+      minutes: 5,
+      seconds: 0,
+      teamName: "",
+      groupMinutes: 5,
+      groupSeconds: 0,
+    });
     const showCompactSegmentDialog = ref(false);
     const currentCompactRow = ref(null);
+    const confirmRegenerateDialog = ref(false);
+    const runnerToRemove = ref("");
+    const pendingSegmentForCode = ref(null);
     const savingTeamSetup = ref(false);
     const suppressSetupAutosave = ref(false);
     let autosaveTimer = null;
@@ -409,6 +542,51 @@ export default {
         value: index * 5,
       }))
     );
+
+    const isCaptain = computed(
+      () => selectedTeam.value?.captainId === user.value?.uid
+    );
+
+    const captainAssignedSegment = computed(() => {
+      if (!selectedTeam.value || !user.value?.uid) return null;
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) => r.id === user.value.uid
+      );
+      if (!runner?.segmentId) return null;
+      return (activeRace.value?.segments || []).find(
+        (segment) => segment.id === runner.segmentId && segment.type === "solo"
+      );
+    });
+
+    const isCaptainAssignedToAnySegment = computed(
+      () => !!captainAssignedSegment.value
+    );
+
+    const isSegmentAssigned = computed(() => {
+      if (!selectedTeam.value || !currentCompactRow.value) return false;
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) => r.segmentId === currentCompactRow.value.segmentId
+      );
+      return !!runner;
+    });
+
+    const isAssignedToMe = computed(() => {
+      if (!selectedTeam.value || !currentCompactRow.value || !user.value?.uid)
+        return false;
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) =>
+          r.segmentId === currentCompactRow.value.segmentId &&
+          r.id === user.value.uid
+      );
+      return !!runner;
+    });
+
+    const getSegmentRunner = (segmentId) => {
+      if (!selectedTeam.value) return null;
+      return (selectedTeam.value.runners || []).find(
+        (r) => r.segmentId === segmentId && r.id !== user.value?.uid
+      );
+    };
 
     const userTeams = computed(() =>
       teams.value.filter(
@@ -642,10 +820,15 @@ export default {
     const startCompactSegmentEdit = (row) => {
       if (!row?.editable) return;
       const config = setupValues.value.segmentConfigs?.[row.segmentId] || {};
+      const teamGroupPace =
+        selectedTeam.value?.groupPaces?.[row.segmentId] || 5;
       editDraft.value = {
         name: config.name || "",
         minutes: getPaceMinutes(config.pace || 5),
         seconds: getPaceSeconds(config.pace || 5),
+        teamName: selectedTeam.value?.name || "",
+        groupMinutes: getPaceMinutes(teamGroupPace),
+        groupSeconds: getPaceSeconds(teamGroupPace),
       };
     };
 
@@ -661,7 +844,8 @@ export default {
       currentCompactRow.value = null;
     };
 
-    const saveCompactSegmentEdit = (row = currentCompactRow.value) => {
+    const saveCompactSegmentEdit = async (row = currentCompactRow.value) => {
+      closeCompactSegmentEdit();
       if (!row?.editable || !canEditRow(row)) return;
       const updatedConfig = {
         ...(setupValues.value.segmentConfigs?.[row.segmentId] || {}),
@@ -679,6 +863,32 @@ export default {
           [row.segmentId]: updatedConfig,
         },
       };
+
+      if (isCaptain.value && selectedTeam.value) {
+        const updates = {};
+        if (
+          editDraft.value.teamName &&
+          editDraft.value.teamName !== selectedTeam.value.name
+        ) {
+          updates.name = editDraft.value.teamName;
+        }
+        if (row.segmentType === "group") {
+          const groupPace = paceFromParts(
+            editDraft.value.groupMinutes,
+            editDraft.value.groupSeconds
+          );
+          const currentGroupPaces = selectedTeam.value.groupPaces || {};
+          if (currentGroupPaces[row.segmentId] !== groupPace) {
+            updates.groupPaces = {
+              ...currentGroupPaces,
+              [row.segmentId]: groupPace,
+            };
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          await updateTeam(selectedTeam.value.id, updates);
+        }
+      }
 
       if (!selectedTeam.value || canEditSetup.value) {
         queueTeamAutosave(0);
@@ -708,6 +918,169 @@ export default {
         console.error("Error saving runner segment setup:", error);
       } finally {
         savingTeamSetup.value = false;
+      }
+    };
+
+    const notify = (message, type = "positive") => {
+      $q.notify({ type, message, position: "top" });
+    };
+
+    const doGenerateCode = async (segment) => {
+      if (!selectedTeam.value || !segment?.id) return;
+      const code = Math.random().toString(36).substring(2, 15);
+      const runners = (selectedTeam.value.runners || []).filter(
+        (runner) => runner.segmentId !== segment.id
+      );
+      await updateTeam(selectedTeam.value.id, {
+        invitationCodes: {
+          ...(selectedTeam.value.invitationCodes || {}),
+          [segment.id]: code,
+        },
+        runners,
+      });
+    };
+
+    const inviteRunner = async (segment) => {
+      if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
+      const existingCode = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (existingCode) {
+        const existingRunner = getSegmentRunner(segment.id);
+        const runnerName = existingRunner?.name || t("team.runner");
+        $q.dialog({
+          title: t("team.inviteReplaceTitle"),
+          message: t("team.inviteReplaceBody", { name: runnerName }),
+          persistent: true,
+          ok: {
+            label: t("team.invite"),
+            color: "primary",
+          },
+          cancel: {
+            label: t("index.cancel"),
+            color: "negative",
+          },
+        }).onOk(async () => {
+          const code = Math.random().toString(36).substring(2, 15);
+          const runners = (selectedTeam.value.runners || []).filter(
+            (runner) => runner.segmentId !== segment.id
+          );
+          await updateTeam(selectedTeam.value.id, {
+            invitationCodes: {
+              ...(selectedTeam.value.invitationCodes || {}),
+              [segment.id]: code,
+            },
+            runners,
+          });
+          await shareCodeWithCode(segment, code);
+        });
+        return;
+      }
+      await doGenerateCode(segment);
+      const code = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (code) {
+        await shareCodeWithCode(segment, code);
+      }
+    };
+
+    const shareCodeWithCode = async (segment, code) => {
+      if (!code) return;
+      const message = t("team.shareMessage", {
+        team: selectedTeam.value?.name || t("team.unnamedTeam"),
+        code,
+      });
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Milano Relay Marathon",
+            text: message,
+          });
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(message);
+        notify(t("team.codeCopied"), "positive");
+      }
+    };
+
+    const generateCode = async (segment) => {
+      if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
+      const existingCode = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (existingCode) {
+        const existingRunner = getSegmentRunner(segment.id);
+        pendingSegmentForCode.value = segment;
+        runnerToRemove.value = existingRunner?.name || "runner";
+        confirmRegenerateDialog.value = true;
+        return;
+      }
+      await doGenerateCode(segment);
+    };
+
+    const confirmAndGenerateCode = async () => {
+      if (!pendingSegmentForCode.value) return;
+      await doGenerateCode(pendingSegmentForCode.value);
+      pendingSegmentForCode.value = null;
+      confirmRegenerateDialog.value = false;
+    };
+
+    const assignCaptainToSegment = async (segment) => {
+      if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
+
+      const existingRunner = getSegmentRunner(segment.id);
+      const invitationCodes = {
+        ...(selectedTeam.value.invitationCodes || {}),
+      };
+      if (existingRunner) {
+        delete invitationCodes[segment.id];
+      }
+
+      const runners = (selectedTeam.value.runners || []).filter(
+        (runner) => runner.segmentId !== segment.id
+      );
+      runners.push({
+        id: user.value.uid,
+        segmentId: segment.id,
+        name: user.value.displayName || user.value.email || "",
+        pace: 5,
+      });
+
+      await updateTeam(selectedTeam.value.id, { runners, invitationCodes });
+    };
+
+    const removeCaptainFromSpecificSegment = async (segmentId) => {
+      if (!selectedTeam.value || !segmentId) return;
+      const runners = (selectedTeam.value.runners || []).filter(
+        (runner) =>
+          runner.id !== user.value.uid || runner.segmentId !== segmentId
+      );
+      await updateTeam(selectedTeam.value.id, { runners });
+    };
+
+    const shareCode = async (segment) => {
+      if (!selectedTeam.value || !segment?.id) return;
+      const code = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (!code) return;
+      const message = t("team.shareMessage", {
+        team: selectedTeam.value?.name || t("team.unnamedTeam"),
+        code,
+      });
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Milano Relay Marathon",
+            text: message,
+          });
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(message);
+        notify(t("team.codeCopied"), "positive");
       }
     };
 
@@ -912,6 +1285,14 @@ export default {
       return "bg-blue-1";
     };
 
+    const getSegmentColor = (segmentId) => {
+      if (!selectedTeam.value || !segmentId) return "grey-7";
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) => r.segmentId === segmentId
+      );
+      return runner ? "positive" : "grey-7";
+    };
+
     const isOwnRunnerRow = (row) =>
       !!selectedTeam.value &&
       row?.segmentType === "solo" &&
@@ -1012,6 +1393,7 @@ export default {
       canEditSetup,
       canEditRow,
       getRowClass,
+      getSegmentColor,
       isOwnRunnerRow,
       loading,
       setupValues,
@@ -1035,6 +1417,21 @@ export default {
       closeCompactSegmentEdit,
       startCompactSegmentEdit,
       saveCompactSegmentEdit,
+      isCaptain,
+      captainAssignedSegment,
+      isCaptainAssignedToAnySegment,
+      isSegmentAssigned,
+      isAssignedToMe,
+      confirmRegenerateDialog,
+      pendingSegmentForCode,
+      runnerToRemove,
+      assignCaptainToSegment,
+      removeCaptainFromSpecificSegment,
+      inviteRunner,
+      generateCode,
+      confirmAndGenerateCode,
+      shareCode,
+      savingTeamSetup,
     };
   },
 };

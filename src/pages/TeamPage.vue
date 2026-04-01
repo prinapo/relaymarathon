@@ -54,88 +54,6 @@
             <div v-if="!selectedRace" class="text-body2 text-grey-7 q-mb-md">
               {{ t("team.noRaceAssignedHint") }}
             </div>
-
-            <template v-else>
-              <template v-if="isCaptain">
-                <div
-                  v-if="soloSegments.length === 0"
-                  class="text-body2 text-grey-7 q-mb-md"
-                >
-                  {{ t("team.noInvitesForGroup") }}
-                </div>
-
-                <div
-                  v-for="(segment, index) in soloSegments"
-                  :key="segment.id"
-                  class="row items-center q-mb-sm"
-                >
-                  <div class="col-12 col-md-3 q-mb-sm">
-                    {{ segment.name || t("team.leg", { n: index + 1 }) }}
-                  </div>
-                  <div class="col-12 col-md-9 row items-center q-gutter-sm">
-                    <q-btn
-                      :label="t('team.generateCode')"
-                      size="sm"
-                      @click="generateCode(segment)"
-                    />
-                    <q-btn
-                      v-if="!isCaptainAssignedToAnySegment"
-                      :label="t('team.assignToMe')"
-                      color="positive"
-                      size="sm"
-                      @click="assignCaptainToSegment(segment)"
-                    />
-                    <q-btn
-                      v-if="captainAssignedSegment?.id === segment.id"
-                      :label="t('team.unassignMe')"
-                      color="negative"
-                      size="sm"
-                      @click="removeCaptainFromSpecificSegment(segment.id)"
-                    />
-                    <q-btn
-                      v-if="selectedTeam?.invitationCodes?.[segment.id]"
-                      :label="t('team.shareCode')"
-                      color="primary"
-                      icon="share"
-                      size="sm"
-                      @click="shareCode(segment)"
-                    />
-                    <q-input
-                      :model-value="
-                        selectedTeam?.invitationCodes?.[segment.id] || ''
-                      "
-                      dense
-                      readonly
-                      outlined
-                      class="col"
-                    />
-                  </div>
-                </div>
-              </template>
-
-              <template v-else>
-                <div
-                  v-if="runnerAssignedSegment && runnerAssignedCode"
-                  class="q-mb-md"
-                >
-                  <div class="text-body2 text-grey-7 q-mb-sm">
-                    {{ t("team.yourLeg") }}
-                  </div>
-                  <q-input
-                    :model-value="runnerAssignedCode"
-                    :label="runnerAssignedSegment.name || t('team.yourLeg')"
-                    readonly
-                    outlined
-                  />
-                </div>
-                <div
-                  v-else-if="!runnerAssignedSegment"
-                  class="text-body2 text-grey-7 q-mb-md"
-                >
-                  {{ t("team.noLegAssigned") }}
-                </div>
-              </template>
-            </template>
           </template>
         </q-tab-panel>
 
@@ -258,13 +176,11 @@ export default {
     const { user } = useAuth();
     const {
       getTeams,
-      getRaces,
       getTeamsListener,
       getRacesListener,
       createTeam,
       updateTeam,
       deleteTeam,
-      getDefaultRace,
     } = useFirestore();
     const { t } = useI18n();
     const {
@@ -383,6 +299,22 @@ export default {
       );
     });
 
+    const isSegmentAssignedToAnyone = (segmentId) => {
+      if (!selectedTeam.value || !segmentId) return false;
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) => r.segmentId === segmentId
+      );
+      return !!runner;
+    };
+
+    const isAssignedToMe = (segmentId) => {
+      if (!selectedTeam.value || !segmentId || !user.value?.uid) return false;
+      const runner = (selectedTeam.value.runners || []).find(
+        (r) => r.segmentId === segmentId && r.id === user.value.uid
+      );
+      return !!runner;
+    };
+
     const getSegmentRunner = (segmentId) => {
       if (!selectedTeam.value) return null;
       return (selectedTeam.value.runners || []).find(
@@ -416,19 +348,6 @@ export default {
     const loadTeams = async () => {
       teams.value = await getTeams();
       syncSelectedTeam(user.value?.uid, userTeams.value);
-    };
-
-    const loadRaces = async () => {
-      races.value = await getRaces();
-      const defaultRace = await getDefaultRace();
-      if (!races.value.length && defaultRace?.id) {
-        createRaceId.value = defaultRace.id;
-        return;
-      }
-      syncCreateRaceFromContext();
-      if (!createRaceId.value) {
-        createRaceId.value = defaultRace?.id || races.value[0]?.id || "";
-      }
     };
 
     const handleSelectTeam = (teamId) => {
@@ -485,6 +404,73 @@ export default {
       }
     };
 
+    const inviteRunner = async (segment) => {
+      if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
+      const existingCode = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (existingCode) {
+        const existingRunner = (selectedTeam.value.runners || []).find(
+          (r) => r.segmentId === segment.id
+        );
+        const runnerName = existingRunner?.name || t("team.runner");
+        $q.dialog({
+          title: t("team.inviteReplaceTitle"),
+          message: t("team.inviteReplaceBody", { name: runnerName }),
+          persistent: true,
+          ok: {
+            label: t("team.invite"),
+            color: "primary",
+          },
+          cancel: {
+            label: t("index.cancel"),
+            color: "negative",
+          },
+        }).onOk(async () => {
+          const code = Math.random().toString(36).substring(2, 15);
+          const runners = (selectedTeam.value.runners || []).filter(
+            (runner) => runner.segmentId !== segment.id
+          );
+          await updateTeam(selectedTeam.value.id, {
+            invitationCodes: {
+              ...(selectedTeam.value.invitationCodes || {}),
+              [segment.id]: code,
+            },
+            runners,
+          });
+          await shareCodeWithCode(segment, code);
+        });
+        return;
+      }
+      await doGenerateCode(segment);
+      const code = selectedTeam.value?.invitationCodes?.[segment.id];
+      if (code) {
+        await shareCodeWithCode(segment, code);
+      }
+    };
+
+    const shareCodeWithCode = async (segment, code) => {
+      if (!code) return;
+      const message = t("team.shareMessage", {
+        team: selectedTeam.value?.name || t("team.unnamedTeam"),
+        code,
+      });
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Milano Relay Marathon",
+            text: message,
+          });
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(message);
+        notify(t("team.codeCopied"), "positive");
+      }
+    };
+
     const generateCode = async (segment) => {
       if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
 
@@ -520,10 +506,6 @@ export default {
 
     const assignCaptainToSegment = async (segment) => {
       if (!selectedTeam.value || !isCaptain.value || !segment?.id) return;
-      if (captainAssignedSegment.value) {
-        notify(t("team.captainAlreadyAssigned"), "warning");
-        return;
-      }
 
       const existingRunner = getSegmentRunner(segment.id);
       const invitationCodes = { ...(selectedTeam.value.invitationCodes || {}) };
@@ -733,6 +715,8 @@ export default {
       removeCaptainFromSegment,
       removeCaptainFromSpecificSegment,
       getSegmentRunner,
+      isSegmentAssignedToAnyone,
+      isAssignedToMe,
       newTeamName,
       createRaceId,
       creating,
@@ -748,6 +732,7 @@ export default {
       handleCreateTeam,
       handleDeleteTeam,
       joinTeam,
+      inviteRunner,
       generateCode,
       confirmAndGenerateCode,
       shareCode,

@@ -19,15 +19,15 @@
           v-if="!user"
           flat
           :label="t('nav.login')"
-          @click="$router.push('/login')"
           class="text-white"
+          @click="$router.push('/login')"
         />
         <q-btn
           v-else
           flat
           :label="t('nav.logout')"
-          @click="logout"
           class="text-white"
+          @click="logout"
         />
       </q-toolbar>
     </q-header>
@@ -44,9 +44,9 @@
           <q-item
             clickable
             :to="'/'"
-            @click="drawerLeft = false"
             exact
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="home" />
@@ -60,8 +60,8 @@
             v-if="user"
             clickable
             :to="'/team'"
-            @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="group" />
@@ -74,8 +74,8 @@
           <q-item
             clickable
             :to="'/appointments'"
-            @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="event" />
@@ -88,8 +88,8 @@
           <q-item
             clickable
             :to="'/faq'"
-            @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="help" />
@@ -102,8 +102,8 @@
           <q-item
             clickable
             :to="'/help'"
-            @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="info" />
@@ -116,8 +116,8 @@
           <q-item
             clickable
             :to="'/route'"
-            @click="drawerLeft = false"
             active-class="bg-blue-1 text-blue-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="map" />
@@ -133,8 +133,8 @@
             v-if="isAdmin"
             clickable
             :to="'/admin'"
-            @click="drawerLeft = false"
             active-class="bg-amber-1 text-amber-9"
+            @click="drawerLeft = false"
           >
             <q-item-section avatar>
               <q-icon name="admin_panel_settings" color="amber" />
@@ -156,8 +156,8 @@
               <q-item
                 v-for="lang in languages"
                 :key="lang.value"
-                clickable
                 v-close-popup
+                clickable
                 :active="language === lang.value"
                 @click="setLanguage(lang.value)"
               >
@@ -209,11 +209,6 @@ export default {
       };
 
       return pageTitles[route.path] || t("app.title");
-    });
-
-    const languageModel = computed({
-      get: () => language.value,
-      set: (value) => setLanguage(value),
     });
 
     const handleLogout = async () => {

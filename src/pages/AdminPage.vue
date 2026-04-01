@@ -27,8 +27,8 @@
                 :label="t('admin.addRace')"
                 color="primary"
                 class="full-width"
-                @click="handleCreateRace"
                 :loading="creatingRace"
+                @click="handleCreateRace"
               />
             </div>
           </div>
@@ -244,8 +244,8 @@
             class="q-mt-md"
             :label="t('admin.saveTranslations')"
             color="primary"
-            @click="handleSaveTranslations"
             :loading="savingTranslations"
+            @click="handleSaveTranslations"
           />
         </q-tab-panel>
       </q-tab-panels>
@@ -425,7 +425,6 @@ export default {
     const { isAdmin, authInitialized } = useAuth();
     const {
       getRaces,
-      getTeams,
       getRacesListener,
       getTeamsListener,
       createRace,
@@ -778,10 +777,6 @@ export default {
           races.value[0]?.id ||
           "";
       }
-    };
-
-    const loadTeams = async () => {
-      teams.value = await getTeams();
     };
 
     const addSegment = (index) => {

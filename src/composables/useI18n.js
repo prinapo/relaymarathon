@@ -101,5 +101,6 @@ export function useI18n() {
     setLanguage,
     saveTranslations,
     defaultTranslations,
+    unsubscribeTranslations,
   };
 }
