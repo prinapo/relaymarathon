@@ -4,6 +4,10 @@ dist/
 android/.gradle/
 android/build/
 android/app/build/
+coverage/
+.vscode/
+.idea/
+*.local
 tests/
 test-results/
 ios/App/build/
@@ -26,3 +30,5 @@ src-capacitor/ios/DerivedData/
 nul
 .env
 serviceAccountKey.json
+.env.*
+!.env.example
