@@ -29,6 +29,20 @@
                 <data android:scheme="com.prinapo.relaymarathon" />
             </intent-filter>
 
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.google.android.apps.authenticator2" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="oauth2redirect" android:host="com.prinapo.relaymarathon" />
+            </intent-filter>
+
         </activity>
 
         <provider

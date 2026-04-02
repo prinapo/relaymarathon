@@ -12,18 +12,10 @@ echo.
 
 cd /d "%~dp0.."
 
-echo [1/2] Compilazione web assets...
-call npm run build
+echo [1/1] Compilazione Quasar + Capacitor Android (Debug)...
 
-if %ERRORLEVEL% NEQ 0 (
-    echo ERRORE: Build web fallito!
-    pause
-    exit /b 1
-)
-
-echo.
-echo [2/2] Build APK Android con debug...
-call npx quasar build -m capacitor -T android -d
+REM Quasar build esegue internamente il build degli asset web
+call npx quasar build -m capacitor -T android -debug
 
 if %ERRORLEVEL% EQU 0 (
     echo.

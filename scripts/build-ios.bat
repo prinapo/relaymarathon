@@ -12,17 +12,8 @@ echo.
 
 cd /d "%~dp0.."
 
-echo [1/2] Compilazione web assets...
-call npm run build
-
-if %ERRORLEVEL% NEQ 0 (
-    echo ERRORE: Build web fallito!
-    pause
-    exit /b 1
-)
-
 echo.
-echo [2/2] Build iOS...
+echo [1/1] Build Quasar + Capacitor iOS...
 call npx quasar build -m capacitor -T ios
 
 if %ERRORLEVEL% EQU 0 (

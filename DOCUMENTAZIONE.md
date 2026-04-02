@@ -17,6 +17,7 @@ Funzionalita' principali:
 - Frontend: Quasar 2 + Vue 3
 - Routing: Vue Router in modalita' hash
 - Backend: Firebase Authentication + Firestore
+- Mobile UX: Gestione tasto Back Android via Boot File
 - Build tool: Quasar App Vite
 - Mobile: Capacitor
 - Web app: SPA con supporto PWA
@@ -166,7 +167,7 @@ Per sicurezza, in questa documentazione non vengono riportati i valori reali.
 
 Il progetto usa due livelli distinti:
 
-- login Google gestito dal plugin `@capgo/capacitor-social-login`
+- login Google gestito dal plugin `@capacitor-community/google-auth`
 - sessione applicativa finale gestita da Firebase Auth tramite `signInWithCredential`
 
 Strategia corrente:
@@ -384,6 +385,15 @@ Output web atteso:
 - `dist/spa/` per SPA
 
 ## Build mobile con Capacitor
+
+### Sviluppo Rapido (HMR)
+
+Per sviluppare direttamente sul dispositivo vedendo le modifiche in tempo reale:
+
+```bash
+npm run dev:android
+```
+*Nota: Il PC e il dispositivo devono essere sulla stessa rete o collegati via USB.*
 
 Per questo repo il comando corretto da usare e' quello Quasar sulla struttura standard `src-capacitor/`.
 
@@ -626,7 +636,7 @@ Attenzione:
 
 ## TODO
 
-- allineare `package.json` e `src-capacitor/android/app/build.gradle` sulla stessa versione di release
+- ~~allineare package.json e build.gradle~~ (Gestito automaticamente da `npm run release:android`)
 - aggiungere in `.env` i valori `VITE_GOOGLE_WEB_CLIENT_ID`, `VITE_GOOGLE_IOS_CLIENT_ID` e `VITE_GOOGLE_IOS_SERVER_CLIENT_ID`
 - verificare in Firebase Console che il provider Google sia abilitato
 - verificare in Firebase Console che il client web OAuth corrisponda al `webClientId` usato dall'app

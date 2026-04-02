@@ -1,5 +1,5 @@
 import { computed, ref } from "vue";
-import { Capacitor } from "@capacitor/core";
+import { Platform } from "quasar";
 import { SocialLogin } from "@capgo/capacitor-social-login";
 import { auth } from "src/boot/firebase.js";
 import {
@@ -25,108 +25,30 @@ const authInitialized = ref(false);
 let initialized = false;
 let unsubscribe = null;
 let authReadyResolver = null;
-let socialLoginInitializationPromise = null;
+let socialLoginInitialized = false;
 
 const authReadyPromise = new Promise((resolve) => {
   authReadyResolver = resolve;
 });
 
-const isWebPlatform = () => Capacitor.getPlatform() === "web";
+const ensureSocialLoginInitialized = async () => {
+  if (socialLoginInitialized) return;
+  socialLoginInitialized = true;
 
-const getGoogleClientConfig = () => {
   const webClientId =
     import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || DEFAULT_GOOGLE_WEB_CLIENT_ID;
-  const iOSClientId = import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID;
-  const iOSServerClientId =
-    import.meta.env.VITE_GOOGLE_IOS_SERVER_CLIENT_ID || webClientId;
 
-  return {
-    webClientId,
-    iOSClientId,
-    iOSServerClientId,
-  };
-};
-
-const createGoogleLoginOptions = () => {
-  const platform = Capacitor.getPlatform();
-
-  if (platform === "android") {
-    return {
-      filterByAuthorizedAccounts: false,
-      preferIdTokenOnly: true,
-    };
-  }
-
-  if (platform === "ios") {
-    return {
-      forcePrompt: true,
-    };
-  }
-
-  return {
-    prompt: "select_account",
-  };
-};
-
-const ensureSocialLoginInitialized = async () => {
-  if (socialLoginInitializationPromise) {
-    return socialLoginInitializationPromise;
-  }
-
-  socialLoginInitializationPromise = (async () => {
-    const { webClientId, iOSClientId, iOSServerClientId } =
-      getGoogleClientConfig();
-
-    if (!webClientId) {
-      throw new Error(
-        "Google login is not configured: missing web client ID."
-      );
-    }
-
-    const googleConfig = {
-      webClientId,
+  await SocialLogin.initialize({
+    google: {
+      webClientId: webClientId,
       mode: "online",
-    };
-
-    if (iOSClientId) {
-      googleConfig.iOSClientId = iOSClientId;
-      googleConfig.iOSServerClientId = iOSServerClientId;
-    }
-
-    await SocialLogin.initialize({
-      google: googleConfig,
-    });
-  })().catch((error) => {
-    socialLoginInitializationPromise = null;
-    throw error;
+    },
   });
-
-  return socialLoginInitializationPromise;
-};
-
-const getGoogleFirebaseCredential = (loginResult) => {
-  const idToken = loginResult?.result?.idToken;
-
-  if (!idToken) {
-    throw new Error(
-      "Google login completed but did not return an ID token usable by Firebase."
-    );
-  }
-
-  return GoogleAuthProvider.credential(idToken);
 };
 
 const initAuth = () => {
   if (initialized) return;
   initialized = true;
-
-  // Preload the social login provider early so the web popup/native bridge
-  // is ready by the time the user taps the Google button.
-  if (!isWebPlatform()) {
-    ensureSocialLoginInitialized().catch((error) => {
-      console.warn("Social login initialization failed:", error);
-    });
-  }
 
   unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
     try {
@@ -167,24 +89,23 @@ export function useAuth() {
 
   const login = async () => {
     try {
-      if (isWebPlatform()) {
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({
-          prompt: "select_account",
+      if (Platform.is.capacitor) {
+        await ensureSocialLoginInitialized();
+        const result = await SocialLogin.login({
+          provider: "google",
+          options: {
+            scopes: ["profile", "email"],
+          },
         });
+        const idToken = result.result.idToken;
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(auth, credential);
+      } else {
+        const provider = new GoogleAuthProvider();
+        provider.addScope("profile");
+        provider.addScope("email");
         await signInWithPopup(auth, provider);
-        return;
       }
-
-      await ensureSocialLoginInitialized();
-
-      const googleLoginResult = await SocialLogin.login({
-        provider: "google",
-        options: createGoogleLoginOptions(),
-      });
-
-      const credential = getGoogleFirebaseCredential(googleLoginResult);
-      await signInWithCredential(auth, credential);
     } catch (error) {
       console.error("Google login error:", error);
       throw error;
@@ -220,17 +141,15 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      if (isWebPlatform()) {
+      if (Platform.is.capacitor) {
+        await ensureSocialLoginInitialized();
+        await Promise.allSettled([
+          signOut(auth),
+          SocialLogin.logout({ provider: "google" }).catch(() => undefined),
+        ]);
+      } else {
         await signOut(auth);
-        return;
       }
-
-      await Promise.allSettled([
-        signOut(auth),
-        ensureSocialLoginInitialized()
-          .then(() => SocialLogin.logout({ provider: "google" }))
-          .catch(() => undefined),
-      ]);
     } catch (error) {
       console.error("Logout error:", error);
       throw error;

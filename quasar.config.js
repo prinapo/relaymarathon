@@ -22,7 +22,7 @@ module.exports = function () {
         },
       },
       plugins: ["Notify"],
-      boot: ["firebase"],
+      boot: ["app-version", "firebase", "android-back-button", "status-bar"],
     },
 
     extras: ["material-icons"],
@@ -40,6 +40,19 @@ module.exports = function () {
       hideSplashscreen: true,
       appName: "Milano Relay Marathon",
       appId: "com.prinapo.relaymarathon",
+      plugins: {
+        GoogleAuth: {
+          scopes: ["profile", "email"],
+          serverClientId:
+            "600515034231-b5vnh2ghitevnd6c4sl273mtbuqlab01.apps.googleusercontent.com",
+          forceCodeForRefreshToken: true,
+        },
+        SocialLogin: {
+          providers: {
+            google: true,
+          },
+        },
+      },
       iconPaths: {
         ios: "src/assets/icona_app_safe.png",
         android: "src/assets/icona_app_safe.png",
