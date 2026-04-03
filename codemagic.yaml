@@ -2,7 +2,7 @@ workflows:
   ios-build:
     name: iOS Build (Quasar Capacitor)
     environment:
-      node: 18
+      node: 22
       xcode: latest
     scripts:
       - name: Install dependencies
