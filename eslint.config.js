@@ -99,4 +99,53 @@ module.exports = [
       "no-undef": "off",
     },
   },
+  {
+    files: ["scripts/**/*.{js,mjs,cjs}", "version.js"],
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: "commonjs",
+      globals: {
+        require: "readonly",
+        module: "readonly",
+        exports: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        process: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+        setInterval: "readonly",
+        clearTimeout: "readonly",
+        clearInterval: "readonly",
+        Buffer: "readonly",
+        global: "readonly",
+      },
+    },
+    rules: {
+      "no-undef": "off",
+      "no-unused-vars": "off",
+    },
+  },
+  {
+    files: ["src/boot/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: "module",
+      globals: {
+        console: "readonly",
+        setTimeout: "readonly",
+        setInterval: "readonly",
+        clearTimeout: "readonly",
+        clearInterval: "readonly",
+        window: "readonly",
+        document: "readonly",
+        Promise: "readonly",
+        Capacitor: "readonly",
+        Platform: "readonly",
+      },
+    },
+    rules: {
+      "no-unused-vars": "off",
+      "no-empty-pattern": "off",
+    },
+  },
 ];

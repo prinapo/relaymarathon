@@ -1,21 +1,29 @@
 <template>
   <q-layout view="lhh LpR lff">
-    <q-page-container :style="pageContainerStyle">
+    <q-page-container
+      :style="{
+        ...pageContainerStyle,
+        border: 'none',
+        borderWidth: '0',
+        borderStyle: 'none',
+      }"
+    >
       <router-view />
     </q-page-container>
 
     <q-footer
       class="bg-white text-grey-8"
-      bordered
-      style="border-top: 1px solid #e0e0e0; padding-top: 8px"
+      style="padding-top: 8px; border: none; box-shadow: none"
     >
       <q-tabs
         v-model="currentTab"
-        class="text-grey-7"
+        class="text-grey-7 nav-tabs"
         active-color="primary"
         indicator-color="primary"
         narrow-indicator
         dense
+        inline
+        style="max-width: 100vw"
       >
         <q-route-tab to="/" icon="home" :label="t('nav.home')" no-caps />
         <q-route-tab
@@ -31,6 +39,7 @@
           :label="t('nav.appointments')"
           no-caps
         />
+        <q-route-tab to="/route" icon="map" :label="t('nav.route')" no-caps />
         <q-route-tab to="/faq" icon="help" :label="t('nav.faq')" no-caps />
         <q-route-tab
           :to="user ? '' : '/login'"
@@ -50,6 +59,22 @@
   </q-layout>
 </template>
 
+<style scoped>
+.nav-tabs {
+  width: 100%;
+}
+.nav-tabs :deep(.q-tab) {
+  min-width: 0;
+  padding: 0 4px;
+}
+.nav-tabs :deep(.q-tab__icon) {
+  font-size: 20px;
+}
+.nav-tabs :deep(.q-tab__label) {
+  display: none !important;
+}
+</style>
+
 <script>
 import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
@@ -65,8 +90,7 @@ export default {
     const currentTab = ref("/");
 
     const appVersion = computed(() => {
-      const v = import.meta.env.VITE_RELEASE || "1.0.0";
-      return v;
+      return window.__APP_VERSION__ || "1.0.0";
     });
 
     const currentLanguageLabel = computed(() => {
@@ -92,14 +116,7 @@ export default {
     });
 
     const pageContainerStyle = computed(() => {
-      const statusBarHeight = getComputedStyle(document.documentElement)
-        .getPropertyValue("--status-bar-height")
-        .trim();
-      const height =
-        statusBarHeight && statusBarHeight !== "0px"
-          ? parseInt(statusBarHeight)
-          : 20;
-      return { paddingTop: height + "px" };
+      return { paddingTop: "0px" };
     });
 
     const handleLogout = async () => {

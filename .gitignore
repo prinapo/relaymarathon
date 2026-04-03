@@ -31,4 +31,5 @@ nul
 .env
 serviceAccountKey.json
 .env.*
-!.env.example
+!/.env.example
+ftp-config.json

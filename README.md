@@ -4,11 +4,9 @@ App Quasar + Firebase per la gestione della Milano Relay Marathon, con supporto 
 
 ## Stack
 
-- Quasar 2
-- Vue 3
-- Firebase Authentication
-- Firestore
-- Capacitor
+- Quasar 2 + Vue 3
+- Firebase Authentication + Firestore
+- Capacitor (Android + iOS)
 
 ## Avvio rapido
 
@@ -36,7 +34,25 @@ Build PWA:
 npm run build:pwa
 ```
 
-## Mobile
+## Build e Deploy
+
+### Web
+
+Build:
+
+```bash
+npm run build
+```
+
+Deploy sul server:
+
+```bash
+npm run deploy:web
+```
+
+Lo script builda e carica via FTP su `relaymarathon.sostienilsostegno.com`.
+
+### Mobile
 
 Build Android debug:
 
@@ -65,37 +81,46 @@ npm run release:android
 
 Lo script:
 
-- chiede se la release e' `minor` o `major`
-- aggiorna `version` in [package.json](C:/Users/giova/quasar/mm26/package.json)
-- aggiorna `versionCode` e `versionName` in [build.gradle](C:/Users/giova/quasar/mm26/src-capacitor/android/app/build.gradle)
+- chiede se la release e' `minor`, `major` o `patch`
+- aggiorna `version` in quasar.config.js
+- incrementa `versionCode` in quasar.config.js
 - esegue `quasar build -m capacitor -T android`
 - esegue `bundleRelease`
 
 Output atteso:
 
-```text
+```
 src-capacitor/android/app/build/outputs/bundle/release/app-release.aab
 ```
 
-Build iOS:
+### Build + install rapido
 
 ```bash
-quasar build -m capacitor -T ios
+npm run version dev debug --install
 ```
 
-Installazione APK debug sul telefono collegato via ADB:
+Questo comando builda l'APK, lo installa sul telefono collegato e avvia l'app.
+
+## Versione
+
+La versione è gestita dallo script `version.js` che legge da `package.json`.
+
+Comandi:
 
 ```bash
-adb devices
-adb -s <DEVICE_ID> install -r dist\capacitor\android\apk\debug\app-debug.apk
+node version.js get                    # Leggi versione + versionCode
+node version.js set 1.4.0              # Imposta versione
+node version.js set 1.4.0 10           # Imposta versione + versionCode
+node version.js release minor          # Incrementa (minor|major|patch)
 ```
 
-Nota:
+Build + install rapido:
 
-- la configurazione Capacitor principale e' in [capacitor.config.json](/c:/Users/giova/quasar/mm26/src-capacitor/capacitor.config.json)
-- il repo usa la struttura standard Quasar + Capacitor dentro [src-capacitor](/c:/Users/giova/quasar/mm26/src-capacitor)
-- i progetti nativi reali sono [src-capacitor/android](/c:/Users/giova/quasar/mm26/src-capacitor/android) e [src-capacitor/ios](/c:/Users/giova/quasar/mm26/src-capacitor/ios)
-- per la release Play il repo legge la firma da [keystore.properties](/c:/Users/giova/quasar/mm26/keystore.properties) in root e dalla keystore locale `mm26-upload.keystore` in root progetto
+```bash
+node version.js dev debug --install
+```
+
+Questo comando builda l'APK, lo installa sul telefono collegato e avvia l'app.
 
 ## Configurazione
 
@@ -109,32 +134,31 @@ Per Google Sign-In sono previste anche queste variabili:
 
 File e riferimenti utili:
 
-- [DOCUMENTAZIONE.md](/c:/Users/giova/quasar/mm26/DOCUMENTAZIONE.md)
-- [quasar.conf.js](/c:/Users/giova/quasar/mm26/quasar.conf.js)
-- [firestore.rules](/c:/Users/giova/quasar/mm26/firestore.rules)
-- [CUSTOM_CLAIMS_SETUP.md](/c:/Users/giova/quasar/mm26/CUSTOM_CLAIMS_SETUP.md)
+- [DOCUMENTAZIONE.md](DOCUMENTAZIONE.md)
+- [quasar.config.js](quasar.config.js)
+- [firestore.rules](firestore.rules)
+- [firebase-setup.md](firebase-setup.md)
+- [CUSTOM_CLAIMS_SETUP.md](CUSTOM_CLAIMS_SETUP.md)
 
 ## Funzionalita' principali
 
-- gestione squadre
+- gestione squadre con codici invito
 - calcolo tempi gara per tappa
 - appuntamenti, FAQ e help bilingui
 - area admin con custom claims Firebase
+- supporto multi-gara
 
-## Stato login Google
+## Google Login
 
-Il login Google e' stato impostato con flusso ibrido:
+Il login Google supporta web e Android:
 
-- web tramite provider web
-- Android tramite plugin Capacitor nativo + Firebase credential
-- iOS predisposto a livello codice, ma da completare lato credenziali/config nativa
+- web: provider Firebase
+- Android: plugin Capacitor + Firebase credential
 
-Nota Android:
+La configurazione Capacitor e' in `src-capacitor/capacitor.config.json`.
 
-- la build debug usa esplicitamente la keystore `C:\Users\giova\.android\debug.keystore` per restare coerente con la SHA-1 registrata nel progetto Firebase
-- nel repo e' presente anche una patch versionata al plugin Google login Android in [patches/@capgo+capacitor-social-login+8.3.9.patch](/c:/Users/giova/quasar/mm26/patches/@capgo+capacitor-social-login+8.3.9.patch)
-- la patch viene riapplicata automaticamente da `patch-package` durante `npm install`
+## Note
 
-Per stato tecnico, TODO e checklist test, vedi [DOCUMENTAZIONE.md](/c:/Users/giova/quasar/mm26/DOCUMENTAZIONE.md).
-
-Per dettagli su struttura del progetto, routing, modello dati e note operative, vedi [DOCUMENTAZIONE.md](/c:/Users/giova/quasar/mm26/DOCUMENTAZIONE.md).
+- La configurazione Capacitor principale e' in `src-capacitor/capacitor.config.json`
+- I progetti nativi sono in `src-capacitor/android` e `src-capacitor/ios`
+- Per Google Play, la firma viene letta da `keystore.properties` in root

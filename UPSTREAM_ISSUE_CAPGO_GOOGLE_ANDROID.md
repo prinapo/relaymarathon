@@ -62,11 +62,11 @@ Example:
 
 ```ts
 const result = await SocialLogin.login({
-  provider: 'google',
+  provider: "google",
   options: {
     preferIdTokenOnly: true,
   },
-})
+});
 ```
 
 Possible semantics:
@@ -97,26 +97,26 @@ Behavior:
 Stack:
 
 - Quasar 2
-- Capacitor 8
+- Capacitor 7
 - Firebase Auth
-- `@capgo/capacitor-social-login@8.3.9`
+- `@capgo/capacitor-social-login@7.20.0`
 
 Firebase usage:
 
 ```ts
 const googleLoginResult = await SocialLogin.login({
-  provider: 'google',
+  provider: "google",
   options: {
     filterByAuthorizedAccounts: false,
     preferIdTokenOnly: true,
   },
-})
+});
 
 const credential = GoogleAuthProvider.credential(
-  googleLoginResult?.result?.idToken
-)
+  googleLoginResult?.result?.idToken,
+);
 
-await signInWithCredential(auth, credential)
+await signInWithCredential(auth, credential);
 ```
 
 ## Why this should be upstream instead of app-local
@@ -131,6 +131,6 @@ await signInWithCredential(auth, credential)
 We currently maintain this via:
 
 - `patch-package`
-- patch file: `patches/@capgo+capacitor-social-login+8.3.9.patch`
+- patch file: `patches/@capgo+capacitor-social-login+7.20.0.patch`
 
 We would prefer to remove the patch and adopt an official plugin option instead.

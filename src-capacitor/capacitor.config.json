@@ -1,7 +1,7 @@
 {
   "appId": "com.prinapo.relaymarathon",
   "appName": "Milano Relay Marathon",
-  "webDir": "dist/spa",
+  "webDir": "../dist/spa",
   "androidPackageFormat": "debug",
   "plugins": {
     "SocialLogin": {

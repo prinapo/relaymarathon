@@ -1,9 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-console.log("🚀 Initializing Firebase with config:");
-console.log("📦 Release:", import.meta.env.VITE_RELEASE || "N/A");
-console.log("📦 Release:", import.meta.env.VITE_RELEASE || "N/A");
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -17,6 +15,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Temporary fix: set app version here, since app-version boot may not be executed.
+// Version value comes from package.json via import in quasar.config.js and is stable.
+import { version as packageVersion } from "../../package.json";
+
+window.__APP_VERSION__ = packageVersion || "1.0.0";
 
 export default ({ app }) => {
   app.config.globalProperties.$firebase = { auth, db };

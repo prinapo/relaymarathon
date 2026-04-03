@@ -20,10 +20,10 @@ if %ERRORLEVEL% EQU 0 (
     echo.
     echo ========================================
     echo Build iOS completato!
-    echo Output: ios\
+    echo Output: src-capacitor\ios\
     echo.
     echo Per firmare e distribuire:
-    echo   1. Apri: ios\App\App.xcworkspace
+    echo   1. Apri: src-capacitor\ios\App\App.xcworkspace
     echo   2. Configura signing in Xcode
     echo   3. Build > Archive
     echo ========================================

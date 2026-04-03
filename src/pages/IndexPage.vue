@@ -221,8 +221,8 @@
                   col.name === 'arrivalTime'
                     ? 'text-right text-weight-bold text-caption'
                     : col.name === 'duration'
-                    ? 'text-right text-caption'
-                    : 'text-center text-caption',
+                      ? 'text-right text-caption'
+                      : 'text-center text-caption',
                   'text-nowrap',
                 ]"
               >
@@ -241,7 +241,7 @@
         </div>
 
         <q-dialog v-model="showCompactSegmentDialog" persistent>
-          <q-card class="details-card flat bordered">
+          <q-card class="details-card flat">
             <q-card-section class="q-gutter-sm">
               <div class="text-subtitle2">
                 {{ currentCompactRow?.segmentName || "" }}
@@ -333,7 +333,7 @@
                     size="sm"
                     @click="
                       removeCaptainFromSpecificSegment(
-                        currentCompactRow.segmentId
+                        currentCompactRow.segmentId,
                       )
                     "
                   />
@@ -370,15 +370,15 @@
             <q-card-actions align="right">
               <q-btn
                 flat
-                :label="t('index.cancel')"
+                :label="t('index.save')"
                 color="primary"
-                @click="closeCompactSegmentEdit"
+                @click="saveCompactSegmentEdit"
               />
               <q-btn
                 flat
                 :label="t('index.save')"
                 color="primary"
-                @click="saveCompactSegmentEdit"
+                @click="saveCompactSegmentEdit()"
               />
             </q-card-actions>
           </q-card>
@@ -533,39 +533,39 @@ export default {
       Array.from({ length: 8 }, (_, index) => ({
         label: `${index + 2}`,
         value: index + 2,
-      }))
+      })),
     );
 
     const secondOptions = computed(() =>
       Array.from({ length: 12 }, (_, index) => ({
         label: `${index * 5}`.padStart(2, "0"),
         value: index * 5,
-      }))
+      })),
     );
 
     const isCaptain = computed(
-      () => selectedTeam.value?.captainId === user.value?.uid
+      () => selectedTeam.value?.captainId === user.value?.uid,
     );
 
     const captainAssignedSegment = computed(() => {
       if (!selectedTeam.value || !user.value?.uid) return null;
       const runner = (selectedTeam.value.runners || []).find(
-        (r) => r.id === user.value.uid
+        (r) => r.id === user.value.uid,
       );
       if (!runner?.segmentId) return null;
       return (activeRace.value?.segments || []).find(
-        (segment) => segment.id === runner.segmentId && segment.type === "solo"
+        (segment) => segment.id === runner.segmentId && segment.type === "solo",
       );
     });
 
     const isCaptainAssignedToAnySegment = computed(
-      () => !!captainAssignedSegment.value
+      () => !!captainAssignedSegment.value,
     );
 
     const isSegmentAssigned = computed(() => {
       if (!selectedTeam.value || !currentCompactRow.value) return false;
       const runner = (selectedTeam.value.runners || []).find(
-        (r) => r.segmentId === currentCompactRow.value.segmentId
+        (r) => r.segmentId === currentCompactRow.value.segmentId,
       );
       return !!runner;
     });
@@ -576,7 +576,7 @@ export default {
       const runner = (selectedTeam.value.runners || []).find(
         (r) =>
           r.segmentId === currentCompactRow.value.segmentId &&
-          r.id === user.value.uid
+          r.id === user.value.uid,
       );
       return !!runner;
     });
@@ -584,7 +584,7 @@ export default {
     const getSegmentRunner = (segmentId) => {
       if (!selectedTeam.value) return null;
       return (selectedTeam.value.runners || []).find(
-        (r) => r.segmentId === segmentId && r.id !== user.value?.uid
+        (r) => r.segmentId === segmentId && r.id !== user.value?.uid,
       );
     };
 
@@ -592,16 +592,17 @@ export default {
       teams.value.filter(
         (team) =>
           team.captainId === user.value?.uid ||
-          (team.runners || []).some((runner) => runner.id === user.value?.uid)
-      )
+          (team.runners || []).some((runner) => runner.id === user.value?.uid),
+      ),
     );
 
     const defaultRace = computed(
-      () => races.value.find((race) => race.isDefault) || races.value[0] || null
+      () =>
+        races.value.find((race) => race.isDefault) || races.value[0] || null,
     );
     const fallbackUserRace = computed(() => {
       const selectedUserTeam = userTeams.value.find(
-        (team) => team.id === selectedTeamId.value
+        (team) => team.id === selectedTeamId.value,
       );
       if (selectedUserTeam?.raceId) {
         return (
@@ -624,21 +625,21 @@ export default {
         races.value.find((race) => race.id === selectedPublicRaceId.value) ||
         fallbackUserRace.value ||
         defaultRace.value ||
-        null
+        null,
     );
     const teamsForSelectedRace = computed(() =>
       userTeams.value.filter(
         (team) =>
-          !selectedViewRace.value || team.raceId === selectedViewRace.value.id
-      )
+          !selectedViewRace.value || team.raceId === selectedViewRace.value.id,
+      ),
     );
     const selectedTeam = computed(
       () =>
         teamsForSelectedRace.value.find(
-          (team) => team.id === selectedTeamId.value
+          (team) => team.id === selectedTeamId.value,
         ) ||
         teamsForSelectedRace.value[0] ||
-        null
+        null,
     );
     const activeRace = computed(() => {
       if (selectedViewRace.value) {
@@ -664,22 +665,22 @@ export default {
 
     const canEditSetup = computed(
       () =>
-        !selectedTeam.value || selectedTeam.value.captainId === user.value?.uid
+        !selectedTeam.value || selectedTeam.value.captainId === user.value?.uid,
     );
     const runnerSegmentIds = computed(
       () =>
         new Set(
           (selectedTeam.value?.runners || [])
             .filter((runner) => runner.id === user.value?.uid)
-            .map((runner) => runner.segmentId)
-        )
+            .map((runner) => runner.segmentId),
+        ),
     );
 
     const raceOptions = computed(() =>
       races.value.map((race) => ({
         label: race.name?.trim() || t("admin.unnamedRace"),
         value: race.id,
-      }))
+      })),
     );
 
     const teamOptions = computed(() =>
@@ -691,7 +692,7 @@ export default {
           }`,
           value: team.id,
         };
-      })
+      }),
     );
 
     const getLocalSetupStorageKey = (raceId) =>
@@ -756,14 +757,14 @@ export default {
       if (!activeRace.value) return;
       localStorage.setItem(
         getLocalSetupStorageKey(activeRace.value.id),
-        JSON.stringify(setupValues.value)
+        JSON.stringify(setupValues.value),
       );
     };
 
     const syncSetupFromTeam = (team, race) => {
       const baseSetup = buildBaseSetup(race);
       const runnersBySegment = Object.fromEntries(
-        (team?.runners || []).map((runner) => [runner.segmentId, runner])
+        (team?.runners || []).map((runner) => [runner.segmentId, runner]),
       );
       const groupPaces = team?.groupPaces || {};
 
@@ -845,8 +846,10 @@ export default {
     };
 
     const saveCompactSegmentEdit = async (row = currentCompactRow.value) => {
-      closeCompactSegmentEdit();
-      if (!row?.editable || !canEditRow(row)) return;
+      if (!row?.editable || !canEditRow(row)) {
+        closeCompactSegmentEdit();
+        return;
+      }
       const updatedConfig = {
         ...(setupValues.value.segmentConfigs?.[row.segmentId] || {}),
         pace: paceFromParts(editDraft.value.minutes, editDraft.value.seconds),
@@ -875,7 +878,7 @@ export default {
         if (row.segmentType === "group") {
           const groupPace = paceFromParts(
             editDraft.value.groupMinutes,
-            editDraft.value.groupSeconds
+            editDraft.value.groupSeconds,
           );
           const currentGroupPaces = selectedTeam.value.groupPaces || {};
           if (currentGroupPaces[row.segmentId] !== groupPace) {
@@ -910,7 +913,7 @@ export default {
                 name: config.name || runner.name || "",
                 pace: Number(config.pace) || 5,
               }
-            : runner
+            : runner,
         );
 
         await updateTeam(selectedTeam.value.id, { runners });
@@ -929,7 +932,7 @@ export default {
       if (!selectedTeam.value || !segment?.id) return;
       const code = Math.random().toString(36).substring(2, 15);
       const runners = (selectedTeam.value.runners || []).filter(
-        (runner) => runner.segmentId !== segment.id
+        (runner) => runner.segmentId !== segment.id,
       );
       await updateTeam(selectedTeam.value.id, {
         invitationCodes: {
@@ -961,7 +964,7 @@ export default {
         }).onOk(async () => {
           const code = Math.random().toString(36).substring(2, 15);
           const runners = (selectedTeam.value.runners || []).filter(
-            (runner) => runner.segmentId !== segment.id
+            (runner) => runner.segmentId !== segment.id,
           );
           await updateTeam(selectedTeam.value.id, {
             invitationCodes: {
@@ -1037,7 +1040,7 @@ export default {
       }
 
       const runners = (selectedTeam.value.runners || []).filter(
-        (runner) => runner.segmentId !== segment.id
+        (runner) => runner.segmentId !== segment.id,
       );
       runners.push({
         id: user.value.uid,
@@ -1053,7 +1056,7 @@ export default {
       if (!selectedTeam.value || !segmentId) return;
       const runners = (selectedTeam.value.runners || []).filter(
         (runner) =>
-          runner.id !== user.value.uid || runner.segmentId !== segmentId
+          runner.id !== user.value.uid || runner.segmentId !== segmentId,
       );
       await updateTeam(selectedTeam.value.id, { runners });
     };
@@ -1094,7 +1097,7 @@ export default {
           (selectedTeam.value.runners || []).map((runner) => [
             runner.segmentId,
             runner,
-          ])
+          ]),
         );
 
         const runners = (activeRace.value.segments || [])
@@ -1155,7 +1158,7 @@ export default {
             activeRace.value.startTime
               ? Number(activeRace.value.startTime.split(":")[0] || 0) * 60 +
                   Number(activeRace.value.startTime.split(":")[1] || 0)
-              : 0
+              : 0,
           ),
           duration: "",
           pace: "",
@@ -1203,7 +1206,7 @@ export default {
         activeRace.value,
         setupValues.value.segmentConfigs || {},
         setupValues.value.startDelay,
-        activeRace.value.startTime || "08:00"
+        activeRace.value.startTime || "08:00",
       );
 
       buildResultRows(times);
@@ -1252,7 +1255,7 @@ export default {
     const handleSelectTeam = (teamId) => {
       setSelectedTeam(user.value?.uid, teamId);
       const teamRaceId = userTeams.value.find(
-        (team) => team.id === teamId
+        (team) => team.id === teamId,
       )?.raceId;
       if (teamRaceId) {
         setSelectedPublicRace(teamRaceId);
@@ -1262,7 +1265,7 @@ export default {
     const handleSelectRace = (raceId) => {
       setSelectedPublicRace(raceId);
       const matchingTeams = userTeams.value.filter(
-        (team) => team.raceId === raceId
+        (team) => team.raceId === raceId,
       );
       setSelectedTeam(user.value?.uid, matchingTeams[0]?.id || "");
     };
@@ -1288,7 +1291,7 @@ export default {
     const getSegmentColor = (segmentId) => {
       if (!selectedTeam.value || !segmentId) return "grey-7";
       const runner = (selectedTeam.value.runners || []).find(
-        (r) => r.segmentId === segmentId
+        (r) => r.segmentId === segmentId,
       );
       return runner ? "positive" : "grey-7";
     };
@@ -1331,7 +1334,7 @@ export default {
           console.error("Error in races listener:", error);
           races.value = [];
           applySetupForCurrentContext();
-        }
+        },
       );
 
       unsubscribeTeams = getTeamsListener(
@@ -1342,7 +1345,7 @@ export default {
         },
         (error) => {
           console.error("Error in teams listener:", error);
-        }
+        },
       );
     });
 
@@ -1355,11 +1358,12 @@ export default {
       (nextTeams) => {
         const nextTeamsForRace = nextTeams.filter(
           (team) =>
-            !selectedViewRace.value || team.raceId === selectedViewRace.value.id
+            !selectedViewRace.value ||
+            team.raceId === selectedViewRace.value.id,
         );
         syncSelectedTeam(user.value?.uid, nextTeamsForRace);
       },
-      { deep: true }
+      { deep: true },
     );
 
     watch([selectedTeam, activeRace], () => {
@@ -1374,7 +1378,7 @@ export default {
         }
         recalculate();
       },
-      { deep: true }
+      { deep: true },
     );
 
     onUnmounted(() => {

@@ -28,9 +28,8 @@ export default route(function (/* { store, ssrContext } */) {
             path: "appointments",
             component: () => import("pages/AppointmentsPage.vue"),
           },
-          { path: "faq", component: () => import("pages/FaqPage.vue") },
-          { path: "help", component: () => import("pages/HelpPage.vue") },
           { path: "route", component: () => import("pages/PercorsoPage.vue") },
+          { path: "faq", component: () => import("pages/FaqPage.vue") },
         ],
       },
       {
@@ -83,7 +82,7 @@ export default route(function (/* { store, ssrContext } */) {
 
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
     const requiresAdmin = to.matched.some(
-      (record) => record.meta.requiresAdmin
+      (record) => record.meta.requiresAdmin,
     );
 
     await waitForAuthReady();
