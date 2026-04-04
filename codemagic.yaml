@@ -12,7 +12,7 @@ workflows:
 
       - name: Build Quasar app
         script: |
-          npx quasar build -m capacitor -T ios
+          npx quasar build -m capacitor -T ios --skip-pkg
 
       - name: Build iOS app
         script: |
