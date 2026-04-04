@@ -16,8 +16,10 @@ workflows:
       - name: Install CocoaPods
         script: |
           cd src-capacitor/ios/App
-          pod repo update
+          pwd
+          ls -la
           pod install
+          ls -la
 
       - name: Build iOS app
         script: |
