@@ -4,6 +4,7 @@ workflows:
     environment:
       node: 22
       xcode: latest
+
     scripts:
       - name: Install dependencies
         script: |
@@ -13,18 +14,10 @@ workflows:
         script: |
           npx quasar build -m capacitor -T ios
 
-      - name: Install CocoaPods
-        script: |
-          cd src-capacitor/ios/App
-          pwd
-          ls -la
-          pod install
-          ls -la
-
       - name: Build iOS app
         script: |
           cd src-capacitor/ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Release \
                      -sdk iphoneos \
