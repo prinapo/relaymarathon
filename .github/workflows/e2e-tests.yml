@@ -53,7 +53,7 @@ jobs:
           curl -s "http://localhost:8080/v1/projects/${{ env.EMULATOR_PROJECT }}/databases/(default)/documents" || true
 
       - name: Build app
-        run: npm run build
+        run: npx quasar build
 
       - name: Start dev server
         run: |
