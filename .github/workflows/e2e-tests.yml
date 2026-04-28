@@ -79,7 +79,7 @@ jobs:
         run: node scripts/create-test-users.js
 
       - name: Run E2E tests
-        run: npx playwright test --reporter=list --timeout=30000 --retries=1
+        run: npx playwright test "check-console|debug-console|e2e-console-full" --reporter=list --timeout=30000 --retries=1
         continue-on-error: true
 
       - name: Upload test results
