@@ -25,6 +25,7 @@ tags: [mm26, documentation, overview, quick-start]
 - [Gestione Squadre](features/team-management.md) - Team e runner
 - [Gestione Gare](features/race-management.md) - Races e segmenti
 - [Admin Panel](features/admin-panel.md) - Funzionalità admin
+- [TODO](TODO.md) - Funzionalità future
 - [Quick Start](deployment/quick-start.md) - Setup sviluppo
 - [Build Commands](deployment/build-commands.md) - Comandi build
 - [Android](deployment/android.md) - Build Android

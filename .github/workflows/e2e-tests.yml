@@ -11,6 +11,7 @@ env:
   NODE_VERSION: '24'
   EMULATOR_PROJECT: demo-emulator
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  VITE_USE_EMULATOR: 'true'
 
 jobs:
   e2e-tests:
@@ -69,9 +70,13 @@ jobs:
 
       - name: Start dev server
         run: |
+          echo "VITE_USE_EMULATOR=true" >> .env
           npm run dev &
           echo "Waiting for dev server..."
           sleep 15
+
+      - name: Create test users
+        run: node scripts/create-test-users.js
 
       - name: Run E2E tests
         run: npx playwright test --reporter=list --timeout=30000 --retries=1
