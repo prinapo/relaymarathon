@@ -55,6 +55,11 @@ jobs:
       - name: Build app
         run: npx quasar build
 
+      - name: Kill any process on port 9000
+        run: |
+          fuser -k 9000/tcp 2>/dev/null || true
+          sleep 2
+
       - name: Start dev server
         run: |
           npm run dev &
