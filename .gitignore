@@ -8,7 +8,6 @@ coverage/
 .vscode/
 .idea/
 *.local
-tests/
 test-results/
 ios/App/build/
 ios/DerivedData/
