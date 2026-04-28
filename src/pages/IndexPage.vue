@@ -1,23 +1,14 @@
 <template>
   <q-page>
-    <q-card class="q-pa-sm">
-      <q-card-section v-if="!user">
-        <div class="text-h6 q-mb-md">{{ t("index.title") }}</div>
-        <div class="text-body2 q-mb-md text-grey-7">
-          {{ t("index.localHint") }}
-        </div>
-      </q-card-section>
-
-      <q-card-section v-else-if="!selectedTeam">
+    <div class="q-pa-md">
+      <div v-if="!activeRace && user" class="q-pa-md">
         <div class="text-h6 q-mb-md">
           {{
             activeRace?.name ||
             t("index.noTeamTitle", { name: user.displayName || user.email })
           }}
         </div>
-        <div class="text-body1 q-mb-md">
-          {{ t("index.noTeamBody") }}
-        </div>
+        <div class="text-body1 q-mb-md">{{ t("index.noTeamBody") }}</div>
         <q-btn
           :label="t('team.createTeam')"
           color="primary"
@@ -34,403 +25,177 @@
           color="secondary"
           @click="$router.push({ path: '/team', query: { tab: 'join' } })"
         />
-      </q-card-section>
+      </div>
 
-      <q-card-section v-else>
-        <div class="text-h6 q-mb-md">
-          {{ t("index.teamRaceTimes", { team: selectedTeam.name }) }}
-        </div>
-      </q-card-section>
+      <div v-else-if="!activeRace" class="q-pa-md text-body2 text-grey-7">
+        {{ t("index.noRaceSelected") }}
+      </div>
 
-      <q-card-section class="q-px-sm q-pb-sm q-pt-none">
-        <div v-if="raceOptions.length" class="q-px-sm q-pb-sm">
-          <q-select
-            :model-value="selectedPublicRaceId"
-            :options="raceOptions"
-            emit-value
-            map-options
-            behavior="menu"
-            outlined
-            dense
-            :label="t('index.selectRace')"
-            @update:model-value="handleSelectRace"
-          />
-        </div>
+      <RaceTimeline
+        v-if="activeRace"
+        :rows="timelineRows"
+        :assigned-segments="assignedSegments"
+        :accepted-segments="acceptedSegments"
+        :start-time="activeRace.startTime || '09:00'"
+        :start-location="activeRace.startLocation || ''"
+        :start-delay="setupValues.startDelay || 0"
+        :end-time="endTime"
+        :end-location="
+          activeRace.segments[activeRace.segments.length - 1]?.name || ''
+        "
+        @edit-delay="openDelayDialog"
+        @edit-pace="openPaceDialog"
+        @edit-runner-name="openRunnerNameDialog"
+      />
 
-        <div
-          v-if="user && teamsForSelectedRace.length > 0"
-          class="q-px-sm q-pb-sm"
-        >
-          <q-select
-            :model-value="selectedTeamId"
-            :options="teamOptions"
-            emit-value
-            map-options
-            behavior="menu"
-            outlined
-            dense
-            :label="t('index.selectTeam')"
-            @update:model-value="handleSelectTeam"
-          />
-        </div>
-
-        <div v-if="activeRace" class="q-px-sm q-pb-sm">
-          <div class="row items-center q-mb-sm">
-            <q-icon name="flag" size="20px" class="q-mr-sm text-primary" />
-            <div class="text-weight-medium q-mr-sm">
-              {{ t("index.raceStartTime") }}:
-            </div>
-            <span class="text-weight-bold text-h6">{{
-              activeRace.startTime
-            }}</span>
-          </div>
-          <div class="row items-center q-mb-md">
-            <q-icon name="schedule" size="20px" class="q-mr-sm text-primary" />
-            <div class="text-weight-medium q-mr-sm">
-              {{ t("index.startDelay") }}:
-            </div>
-            <q-input
-              v-if="canEditSetup"
-              :model-value="setupValues.startDelay"
-              type="number"
-              min="0"
-              max="60"
-              outlined
-              dense
-              class="text-weight-bold minWidth100"
-              @update:model-value="updateStartDelay"
+      <q-dialog v-model="showCompactSegmentDialog" persistent>
+        <q-card class="details-card flat">
+          <q-card-section class="row justify-end q-pa-xs">
+            <q-btn icon="close" flat round @click="closeCompactSegmentEdit" />
+          </q-card-section>
+          <q-card-section class="q-gutter-sm q-pt-none">
+            <PacePicker
+              v-model="runnerPace"
+              :minute-range="[2, 3, 4, 5, 6, 7]"
+              :second-interval="5"
+              @save="onRunnerPaceSaved"
             />
-            <span
-              v-else
-              class="text-weight-bold text-h6 minWidth100"
-              @mousedown="notifyStartDelayReadOnly"
-            >
-              {{ setupValues.startDelay }}
-            </span>
-          </div>
-        </div>
+          </q-card-section>
+        </q-card>
+      </q-dialog>
 
-        <div v-else class="q-px-sm q-pb-md text-body2 text-grey-7">
-          {{ t("index.noRaceSelected") }}
-        </div>
+      <q-dialog v-model="showPaceDialog">
+        <q-card class="details-card flat">
+          <q-card-section class="row justify-end q-pa-xs">
+            <q-btn icon="close" flat round @click="showPaceDialog = false" />
+          </q-card-section>
+          <q-card-section class="text-center">
+            <span class="text-h6 text-uppercase">{{ t("results.pace") }}</span>
+          </q-card-section>
+          <q-card-section class="q-gutter-sm q-pt-none">
+            <PacePicker
+              v-model="editingPace"
+              :minute-range="[2, 3, 4, 5, 6, 7]"
+              :second-interval="5"
+              :runner-name="editingPaceRunnerName"
+              @save="onPaceSaved"
+            />
+          </q-card-section>
+        </q-card>
+      </q-dialog>
 
-        <q-table
-          v-if="activeRace"
-          :rows="resultRows"
-          :columns="resultColumns"
-          row-key="id"
-          :loading="loading"
-          :pagination="{ rowsPerPage: 0 }"
-          dense
-          hide-pagination
-          flat
-          table-style="width: 100%;"
-        >
-          <template #header="props">
-            <q-tr :props="props">
-              <q-th
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-                class="bg-primary text-white"
-              >
-                {{ col.label }}
-              </q-th>
-            </q-tr>
-          </template>
-          <template #body="props">
-            <q-tr :props="props">
-              <q-td
-                key="label"
-                :props="props"
-                :class="getRowClass(props.row)"
-                class="label-cell"
-              >
-                <template v-if="props.row.editable && canEditRow(props.row)">
-                  <div
-                    class="cursor-pointer"
-                    @click.stop="openCompactSegmentEdit(props.row)"
-                  >
-                    <div class="row items-center">
-                      <div class="icon-cell row justify-center">
-                        <q-icon
-                          v-if="props.row.segmentType"
-                          :name="
-                            props.row.segmentType === 'group'
-                              ? 'groups'
-                              : 'person'
-                          "
-                          :color="getSegmentColor(props.row.segmentId)"
-                          size="16px"
-                        />
-                      </div>
-                      <span class="text-weight-bold">{{
-                        props.row.label.segment
-                      }}</span>
-                    </div>
-                    <div
-                      v-if="props.row.label.runner"
-                      class="text-weight-regular label-indent"
-                    >
-                      {{ props.row.label.runner }}
-                    </div>
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="row items-center">
-                    <div class="icon-cell row justify-center">
-                      <q-icon
-                        v-if="props.row.segmentType"
-                        :name="
-                          props.row.segmentType === 'group'
-                            ? 'groups'
-                            : 'person'
-                        "
-                        :color="getSegmentColor(props.row.segmentId)"
-                        size="16px"
-                      />
-                      <q-icon
-                        v-else-if="props.row.id === 'planned-start'"
-                        name="event"
-                        size="16px"
-                      />
-                      <q-icon
-                        v-else-if="props.row.id === 'real-start'"
-                        name="play_arrow"
-                        size="16px"
-                      />
-                    </div>
-                    <span class="text-weight-bold">{{
-                      props.row.label.segment
-                    }}</span>
-                  </div>
-                  <div
-                    v-if="props.row.label.runner"
-                    class="text-weight-regular label-indent"
-                  >
-                    {{ props.row.label.runner }}
-                  </div>
-                </template>
-              </q-td>
+      <q-dialog v-model="showDelayDialog">
+        <q-card class="details-card flat">
+          <q-card-section class="text-h6">{{
+            t("index.startDelay")
+          }}</q-card-section>
+          <q-card-section>
+            <q-input
+              v-model="editingDelay"
+              type="number"
+              :label="t('index.delayMinutes')"
+              outlined
+              autofocus
+            />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              :label="t('index.cancel')"
+              color="grey"
+              @click="showDelayDialog = false"
+            />
+            <q-btn
+              flat
+              :label="t('index.save')"
+              color="primary"
+              @click="saveDelay"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
 
-              <q-td
-                v-for="col in props.cols.filter((col) => col.name !== 'label')"
-                :key="col.name"
-                :props="props"
-                :class="[
-                  col.name === 'arrivalTime'
-                    ? 'text-right text-weight-bold text-caption'
-                    : col.name === 'duration'
-                      ? 'text-right text-caption'
-                      : 'text-center text-caption',
-                  'text-nowrap',
-                ]"
-              >
-                {{ col.value }}
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
-
-        <div v-if="activeRace" class="q-px-sm q-pt-xs text-caption text-grey-7">
-          <q-icon name="person" size="16px" class="q-mr-xs" />
-          {{ t("index.legendSolo") }}
-          <span class="q-mx-sm">|</span>
-          <q-icon name="groups" size="16px" class="q-mr-xs" />
-          {{ t("index.legendGroup") }}
-        </div>
-
-        <q-dialog v-model="showCompactSegmentDialog" persistent>
-          <q-card class="details-card flat">
-            <q-card-section class="q-gutter-sm">
-              <div class="text-subtitle2">
-                {{ currentCompactRow?.segmentName || "" }}
-              </div>
-              <q-input
-                v-if="isCaptain"
-                v-model="editDraft.teamName"
-                :label="t('team.teamName')"
-                dense
-                class="q-mb-sm"
-              />
-              <q-input
-                v-if="currentCompactRow?.segmentType === 'solo'"
-                v-model="editDraft.name"
-                :label="t('index.name')"
-                dense
-                autofocus
-              />
-              <div class="row items-end q-gutter-sm pace-row">
-                <div class="col pace-part">
-                  <q-select
-                    v-model="editDraft.minutes"
-                    :options="minuteOptions"
-                    :label="t('index.min')"
-                    dense
-                    emit-value
-                    map-options
-                  />
-                </div>
-                <div class="col pace-part">
-                  <q-select
-                    v-model="editDraft.seconds"
-                    :options="secondOptions"
-                    :label="t('index.sec')"
-                    dense
-                    emit-value
-                    map-options
-                  />
-                </div>
-              </div>
-
-              <div
-                v-if="isCaptain && currentCompactRow?.segmentType === 'group'"
-                class="q-mt-sm"
-              >
-                <div class="text-caption text-grey-7 q-mb-xs">
-                  {{ t("team.teamPace") }}
-                </div>
-                <div class="row items-end q-gutter-sm pace-row">
-                  <div class="col pace-part">
-                    <q-select
-                      v-model="editDraft.groupMinutes"
-                      :options="minuteOptions"
-                      :label="t('index.min')"
-                      dense
-                      emit-value
-                      map-options
-                    />
-                  </div>
-                  <div class="col pace-part">
-                    <q-select
-                      v-model="editDraft.groupSeconds"
-                      :options="secondOptions"
-                      :label="t('index.sec')"
-                      dense
-                      emit-value
-                      map-options
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                v-if="selectedTeam && currentCompactRow?.segmentType === 'solo'"
-                class="q-mt-md"
-              >
-                <div class="row q-col-gutter-sm q-mb-md items-center">
-                  <q-btn
-                    v-if="isCaptain && !isAssignedToMe"
-                    :label="t('team.assignToMe')"
-                    color="positive"
-                    size="sm"
-                    @click="assignCaptainToSegment(currentCompactRow)"
-                  />
-                  <q-btn
-                    v-if="isCaptain && isAssignedToMe"
-                    :label="t('team.unassignMe')"
-                    color="negative"
-                    size="sm"
-                    @click="
-                      removeCaptainFromSpecificSegment(
-                        currentCompactRow.segmentId,
-                      )
-                    "
-                  />
-                  <q-btn
-                    v-if="isCaptain && !isAssignedToMe"
-                    :label="t('team.invite')"
-                    icon="send"
-                    color="primary"
-                    size="sm"
-                    @click="inviteRunner(currentCompactRow)"
-                  />
-                </div>
-                <q-input
-                  v-if="
-                    selectedTeam?.invitationCodes?.[
-                      currentCompactRow?.segmentId
-                    ]
-                  "
-                  :model-value="
-                    selectedTeam.invitationCodes[currentCompactRow.segmentId]
-                  "
-                  :label="
-                    t('team.inviteCodeLeg', {
-                      n: currentCompactRow?.segmentName || 1,
-                    })
-                  "
-                  readonly
-                  dense
-                  outlined
-                />
-              </div>
-            </q-card-section>
-
-            <q-card-actions align="right">
+<q-dialog v-model="showRunnerNameDialog">
+        <q-card class="details-card flat">
+          <q-card-section class="row justify-end q-pa-xs">
+            <q-btn
+              icon="close"
+              flat
+              round
+              @click="showRunnerNameDialog = false"
+            />
+          </q-card-section>
+          <q-card-section class="text-center">
+            <span class="text-h6 text-uppercase">{{
+              t("team.runnerName")
+            }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-input
+              v-model="editingRunnerName"
+              :label="t('team.runnerName')"
+              outlined
+              autofocus
+            />
+          </q-card-section>
+          <q-card-section
+            v-if="isCaptain && currentEditingSegment && timelineRows[editingRunnerNameIndex]?.segmentType === 'solo'"
+            class="q-gutter-sm"
+          >
+            <div class="row q-gutter-sm">
               <q-btn
-                flat
-                :label="t('index.save')"
+                v-if="!isMySegment(currentEditingSegment)"
+                :label="t('team.assignToMe')"
                 color="primary"
-                @click="saveCompactSegmentEdit"
+                outline
+                @click="handleAssignToMe"
               />
               <q-btn
-                flat
-                :label="t('index.save')"
-                color="primary"
-                @click="saveCompactSegmentEdit()"
-              />
-            </q-card-actions>
-          </q-card>
-        </q-dialog>
-
-        <q-dialog v-model="confirmRegenerateDialog" persistent>
-          <q-card class="dialog-card">
-            <q-card-section class="text-h6">
-              {{ t("team.confirmRegenerateTitle") }}
-            </q-card-section>
-            <q-card-section>
-              {{ t("team.confirmRegenerateBody", { name: runnerToRemove }) }}
-            </q-card-section>
-            <q-card-actions align="right">
-              <q-btn
-                flat
-                :label="t('index.cancel')"
-                color="primary"
-                @click="confirmRegenerateDialog = false"
-              />
-              <q-btn
-                flat
-                :label="t('team.generateCode')"
+                v-if="isMySegment(currentEditingSegment)"
+                :label="t('team.unassignMe')"
                 color="negative"
-                @click="confirmAndGenerateCode"
+                outline
+                @click="handleUnassign"
               />
-            </q-card-actions>
-          </q-card>
-        </q-dialog>
-      </q-card-section>
-
-      <q-card-section v-if="!user">
-        <q-btn
-          :label="t('index.loginToSave')"
-          color="primary"
-          @click="$router.push('/login')"
-        />
-      </q-card-section>
-
-      <q-card-section v-if="user"> </q-card-section>
-    </q-card>
+              <q-btn
+                :label="t('team.invite')"
+                color="secondary"
+                outline
+                @click="handleInvite"
+              />
+            </div>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              :label="t('index.cancel')"
+              color="grey"
+              @click="showRunnerNameDialog = false"
+            />
+            <q-btn
+              flat
+              :label="t('index.save')"
+              color="primary"
+              @click="saveRunnerName"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+    </div>
   </q-page>
 </template>
 
 <script>
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 import { useAuth } from "src/composables/useAuth.js";
 import { useFirestore } from "src/composables/useFirestore.js";
 import { useTimeCalculator } from "src/composables/useTimeCalculator.js";
 import { useI18n } from "src/composables/useI18n.js";
 import { useTeamContext } from "src/composables/useTeamContext.js";
+import PacePicker from "src/components/PacePicker.vue";
+import RaceTimeline from "src/components/RaceTimeline.vue";
 
 const createDefaultSegmentConfig = (segment) => ({
   name: segment.type === "group" ? "" : "",
@@ -438,9 +203,11 @@ const createDefaultSegmentConfig = (segment) => ({
 });
 
 export default {
+  components: { PacePicker, RaceTimeline },
   setup() {
     const $q = useQuasar();
-    const { user } = useAuth();
+    const router = useRouter();
+    const { user, logout, isAdmin } = useAuth();
     const {
       getTeams,
       getRaces,
@@ -479,6 +246,17 @@ export default {
     const showCompactSegmentDialog = ref(false);
     const currentCompactRow = ref(null);
     const confirmRegenerateDialog = ref(false);
+    const showDelayDialog = ref(false);
+    const editingDelay = ref(0);
+    const showPaceDialog = ref(false);
+    const showRunnerNameDialog = ref(false);
+    const editingRunnerName = ref("");
+    const editingRunnerNameIndex = ref(null);
+    const currentEditingSegment = ref(null);
+    const editingPace = ref({ minutes: 5, seconds: 0 });
+    const editingPaceSegmentId = ref(null);
+    const editingPaceRunnerName = ref("");
+    const isPaceDialogEditing = ref(false);
     const runnerToRemove = ref("");
     const pendingSegmentForCode = ref(null);
     const savingTeamSetup = ref(false);
@@ -488,46 +266,6 @@ export default {
     let unsubscribeRaces = null;
 
     const resultRows = ref([]);
-    const fitResultsTable = true;
-    const resultColumns = computed(() => [
-      {
-        name: "label",
-        label: t("results.leg"),
-        field: "label",
-        align: "left",
-        classes: `${fitResultsTable ? "text-caption" : ""} text-weight-medium`,
-        headerClasses: "bg-primary text-white",
-        style: "min-width: 100px; white-space: normal;",
-        headerStyle: "min-width: 100px; white-space: normal;",
-      },
-      {
-        name: "arrivalTime",
-        label: t("results.arrivalTime"),
-        field: "arrivalTime",
-        align: "right",
-        classes: `${fitResultsTable ? "text-caption" : ""} text-weight-bold`,
-        style: "white-space: nowrap; min-width: 70px;",
-        headerClasses: "bg-primary text-white",
-      },
-      {
-        name: "duration",
-        label: t("results.duration"),
-        field: "duration",
-        align: "right",
-        classes: fitResultsTable ? "text-caption" : "",
-        style: "white-space: nowrap; min-width: 60px;",
-        headerClasses: "bg-primary text-white",
-      },
-      {
-        name: "pace",
-        label: t("results.paceMultiline"),
-        field: "pace",
-        align: "center",
-        classes: fitResultsTable ? "text-caption" : "",
-        style: "white-space: nowrap; min-width: 50px;",
-        headerClasses: "bg-primary text-white",
-      },
-    ]);
 
     const minuteOptions = computed(() =>
       Array.from({ length: 8 }, (_, index) => ({
@@ -562,6 +300,22 @@ export default {
       () => !!captainAssignedSegment.value,
     );
 
+    const assignedSegments = computed(() => {
+      if (!selectedTeam.value?.runners) return [];
+      const myUid = user.value?.uid;
+      return selectedTeam.value.runners
+        .filter((r) => r.segmentId && r.id !== myUid)
+        .map((r) => r.segmentId);
+    });
+
+    const acceptedSegments = computed(() => {
+      if (!selectedTeam.value?.runners) return [];
+      const myUid = user.value?.uid;
+      return selectedTeam.value.runners
+        .filter((r) => r.segmentId && r.id === myUid)
+        .map((r) => r.segmentId);
+    });
+
     const isSegmentAssigned = computed(() => {
       if (!selectedTeam.value || !currentCompactRow.value) return false;
       const runner = (selectedTeam.value.runners || []).find(
@@ -579,6 +333,28 @@ export default {
           r.id === user.value.uid,
       );
       return !!runner;
+    });
+
+    const runnerPace = computed({
+      get: () => ({
+        minutes: editDraft.value.minutes,
+        seconds: editDraft.value.seconds,
+      }),
+      set: (val) => {
+        editDraft.value.minutes = val.minutes;
+        editDraft.value.seconds = val.seconds;
+      },
+    });
+
+    const groupPace = computed({
+      get: () => ({
+        minutes: editDraft.value.groupMinutes,
+        seconds: editDraft.value.groupSeconds,
+      }),
+      set: (val) => {
+        editDraft.value.groupMinutes = val.minutes;
+        editDraft.value.groupSeconds = val.seconds;
+      },
     });
 
     const getSegmentRunner = (segmentId) => {
@@ -663,10 +439,12 @@ export default {
       return defaultRace.value;
     });
 
-    const canEditSetup = computed(
-      () =>
-        !selectedTeam.value || selectedTeam.value.captainId === user.value?.uid,
-    );
+    const canEditSetup = computed(() => {
+      if (isAdmin.value) return true;
+      if (selectedTeam.value?.captainId === user.value?.uid) return true;
+      const raceAdmins = activeRace.value?.adminUids || [];
+      return raceAdmins.includes(user.value?.uid);
+    });
     const runnerSegmentIds = computed(
       () =>
         new Set(
@@ -705,6 +483,34 @@ export default {
       Math.round((parsePace(pace) - Math.floor(parsePace(pace))) * 60);
     const paceFromParts = (minutes, seconds) =>
       (Number(minutes) || 0) + (Number(seconds) || 0) / 60;
+
+    const timelineRows = computed(() => {
+      return resultRows.value.filter(
+        (row) => row.id !== "planned-start" && row.id !== "real-start",
+      );
+    });
+
+    const endTime = computed(() => {
+      const lastSegment = timelineRows.value[timelineRows.value.length - 1];
+      return lastSegment?.arrivalTime || "";
+    });
+
+    const maxPace = computed(() => {
+      if (!resultRows.value?.length) return null;
+      let max = 0;
+      resultRows.value.forEach((row) => {
+        const pace = parsePace(row.paceValue);
+        if (pace > max) max = pace;
+      });
+      return max || null;
+    });
+
+    const formatPace = (paceValue) => {
+      if (paceValue == null) return null;
+      const mins = Math.floor(paceValue);
+      const secs = Math.round((paceValue - mins) * 60);
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
 
     const buildBaseSetup = (race) => {
       const segmentConfigs = {};
@@ -818,6 +624,137 @@ export default {
       queueTeamAutosave(0);
     };
 
+    const openDelayDialog = () => {
+      if (!canEditSetup.value) {
+        $q.notify({
+          type: "info",
+          position: "top",
+          message: t("index.startDelayReadOnly"),
+        });
+        return;
+      }
+      editingDelay.value = setupValues.value.startDelay || 0;
+      showDelayDialog.value = true;
+    };
+
+    const openRunnerNameDialog = ({ index }) => {
+      editingRunnerNameIndex.value = index;
+      const segmentId = timelineRows.value[index]?.segmentId;
+      const config = setupValues.value.segmentConfigs?.[segmentId];
+      editingRunnerName.value = config?.name || "";
+      currentEditingSegment.value = segmentId;
+      showRunnerNameDialog.value = true;
+    };
+
+    const saveRunnerName = () => {
+      if (editingRunnerNameIndex.value === null) return;
+      const segmentId =
+        timelineRows.value[editingRunnerNameIndex.value]?.segmentId;
+      if (!segmentId) return;
+      showRunnerNameDialog.value = false;
+      setupValues.value = {
+        ...setupValues.value,
+        segmentConfigs: {
+          ...setupValues.value.segmentConfigs,
+          [segmentId]: {
+            ...setupValues.value.segmentConfigs?.[segmentId],
+            name: editingRunnerName.value,
+          },
+        },
+      };
+      recalculate();
+    };
+
+    const saveDelay = () => {
+      showDelayDialog.value = false;
+      setupValues.value.startDelay = Number(editingDelay.value) || 0;
+      recalculate();
+    };
+
+    const isMySegment = (segmentId) => {
+      const runner = getSegmentRunner(segmentId);
+      return runner?.id === user.value?.uid;
+    };
+
+    const handleAssignToMe = async () => {
+      if (!currentEditingSegment.value) return;
+      const segment = { id: currentEditingSegment.value };
+      await assignCaptainToSegment(segment);
+      showRunnerNameDialog.value = false;
+    };
+
+    const handleUnassign = async () => {
+      if (!currentEditingSegment.value) return;
+      await removeCaptainFromSpecificSegment(currentEditingSegment.value);
+      showRunnerNameDialog.value = false;
+    };
+
+    const handleInvite = async () => {
+      if (!currentEditingSegment.value) return;
+      const segment = { id: currentEditingSegment.value };
+      await inviteRunner(segment);
+      showRunnerNameDialog.value = false;
+    };
+
+    const openPaceDialog = ({ row, index }) => {
+      isPaceDialogEditing.value = true;
+      let pace = 5;
+      let segmentId;
+      if (index === -1) {
+        editingPaceSegmentId.value = null;
+        segmentId = timelineRows.value[0]?.segmentId;
+        const config = setupValues.value.segmentConfigs?.[segmentId];
+        pace = config?.pace || 5;
+        editingPaceRunnerName.value = config?.name || "";
+      } else {
+        editingPaceSegmentId.value = row.segmentId;
+        segmentId = row.segmentId;
+        const config = setupValues.value.segmentConfigs?.[segmentId];
+        pace = config?.pace || 5;
+        editingPaceRunnerName.value = config?.name || "";
+      }
+      editingPace.value = {
+        minutes: Math.floor(pace),
+        seconds: Math.round((pace - Math.floor(pace)) * 60),
+      };
+      showPaceDialog.value = true;
+    };
+
+    const onPaceSaved = async (value) => {
+      const { minutes, seconds } = value;
+      const newPace = paceFromParts(minutes, seconds);
+      showPaceDialog.value = false;
+
+      if (editingPaceSegmentId.value === null) {
+        const firstSegmentId = timelineRows.value[0]?.segmentId;
+        if (firstSegmentId) {
+          setupValues.value = {
+            ...setupValues.value,
+            segmentConfigs: {
+              ...setupValues.value.segmentConfigs,
+              [firstSegmentId]: {
+                ...setupValues.value.segmentConfigs?.[firstSegmentId],
+                pace: newPace,
+              },
+            },
+          };
+        }
+      } else {
+        setupValues.value = {
+          ...setupValues.value,
+          segmentConfigs: {
+            ...setupValues.value.segmentConfigs,
+            [editingPaceSegmentId.value]: {
+              ...setupValues.value.segmentConfigs?.[editingPaceSegmentId.value],
+              pace: newPace,
+            },
+          },
+        };
+      }
+
+      showPaceDialog.value = false;
+    };
+
     const startCompactSegmentEdit = (row) => {
       if (!row?.editable) return;
       const config = setupValues.value.segmentConfigs?.[row.segmentId] || {};
@@ -845,11 +782,48 @@ export default {
       currentCompactRow.value = null;
     };
 
+    const onRunnerPaceSaved = async (value) => {
+      if (!currentCompactRow.value?.editable) {
+        closeCompactSegmentEdit();
+        return;
+      }
+
+      const { minutes, seconds } = value;
+
+      const updatedConfig = {
+        ...(setupValues.value.segmentConfigs?.[
+          currentCompactRow.value.segmentId
+        ] || {}),
+        pace: paceFromParts(minutes, seconds),
+      };
+
+      setupValues.value = {
+        ...setupValues.value,
+        segmentConfigs: {
+          ...setupValues.value.segmentConfigs,
+          [currentCompactRow.value.segmentId]: updatedConfig,
+        },
+      };
+
+      if (!selectedTeam.value || canEditSetup.value) {
+        await saveTeamSetup();
+      } else {
+        await saveOwnRunnerSegment(
+          currentCompactRow.value.segmentId,
+          updatedConfig,
+        );
+      }
+
+      recalculate();
+      closeCompactSegmentEdit();
+    };
+
     const saveCompactSegmentEdit = async (row = currentCompactRow.value) => {
       if (!row?.editable || !canEditRow(row)) {
         closeCompactSegmentEdit();
         return;
       }
+
       const updatedConfig = {
         ...(setupValues.value.segmentConfigs?.[row.segmentId] || {}),
         pace: paceFromParts(editDraft.value.minutes, editDraft.value.seconds),
@@ -894,10 +868,11 @@ export default {
       }
 
       if (!selectedTeam.value || canEditSetup.value) {
-        queueTeamAutosave(0);
+        await saveTeamSetup();
       } else {
-        saveOwnRunnerSegment(row.segmentId, updatedConfig);
+        await saveOwnRunnerSegment(row.segmentId, updatedConfig);
       }
+      recalculate();
       closeCompactSegmentEdit();
     };
 
@@ -917,6 +892,10 @@ export default {
         );
 
         await updateTeam(selectedTeam.value.id, { runners });
+        selectedTeam.value = {
+          ...selectedTeam.value,
+          runners,
+        };
       } catch (error) {
         console.error("Error saving runner segment setup:", error);
       } finally {
@@ -1179,17 +1158,26 @@ export default {
         });
       }
 
-      times.forEach((time) => {
+      times.forEach((time, index) => {
+        const soloPaces = times
+          .filter((t) => t.segmentType !== "group" && t.pace)
+          .map((t) => t.pace);
+        const maxSoloPace = soloPaces.length ? Math.max(...soloPaces) : 5;
+        const pace = time.segmentType === "group" ? maxSoloPace : time.pace;
+
         rows.push({
           id: time.segmentId,
           label: buildRowLabel(time),
           segmentId: time.segmentId,
           segmentName: time.segmentName,
           segmentType: time.segmentType,
+          name: time.runner || "",
           arrivalTime: formatClockDisplay(time.arrivalTime),
           duration: formatDurationMinutesSeconds(time.duration),
-          pace: time.pace ? formatPaceDisplay(time.pace) : "",
+          pace: pace ? formatPaceDisplay(pace) : "",
+          paceValue: pace || 0,
           editable: true,
+          isLast: index === times.length - 1,
         });
       });
 
@@ -1318,6 +1306,11 @@ export default {
       });
     };
 
+    const handleLogout = async () => {
+      await logout();
+      router.push("/login");
+    };
+
     onMounted(() => {
       refreshData();
 
@@ -1370,10 +1363,21 @@ export default {
       applySetupForCurrentContext();
     });
 
+    watch(showPaceDialog, (isOpen) => {
+      if (!isOpen) {
+        isPaceDialogEditing.value = false;
+      }
+    });
+
     watch(
       setupValues,
       () => {
-        if (!selectedTeam.value) {
+        if (isPaceDialogEditing.value) {
+          return;
+        }
+        if (selectedTeam.value) {
+          queueTeamAutosave(0);
+        } else {
           saveLocalSetup();
         }
         recalculate();
@@ -1402,28 +1406,51 @@ export default {
       loading,
       setupValues,
       resultRows,
-      resultColumns,
+      timelineRows,
+      endTime,
       raceOptions,
       teamOptions,
       teamsForSelectedRace,
       minuteOptions,
       secondOptions,
       editDraft,
+      runnerPace,
+      groupPace,
+      maxPace,
+      formatPace,
       t,
       handleSelectTeam,
       handleSelectRace,
+      handleLogout,
       notifyReadOnly,
       notifyStartDelayReadOnly,
       updateStartDelay,
+      openDelayDialog,
+      saveDelay,
+      showDelayDialog,
+      editingDelay,
+      showPaceDialog,
+      editingPace,
+      editingPaceRunnerName,
+      openPaceDialog,
+      onPaceSaved,
+      showRunnerNameDialog,
+      editingRunnerName,
+      openRunnerNameDialog,
+      saveRunnerName,
       showCompactSegmentDialog,
       currentCompactRow,
       openCompactSegmentEdit,
       closeCompactSegmentEdit,
       startCompactSegmentEdit,
+      onRunnerPaceSaved,
       saveCompactSegmentEdit,
       isCaptain,
+      isAdmin,
       captainAssignedSegment,
       isCaptainAssignedToAnySegment,
+      assignedSegments,
+      acceptedSegments,
       isSegmentAssigned,
       isAssignedToMe,
       confirmRegenerateDialog,
@@ -1436,6 +1463,11 @@ export default {
       confirmAndGenerateCode,
       shareCode,
       savingTeamSetup,
+      currentEditingSegment,
+      isMySegment,
+      handleAssignToMe,
+      handleUnassign,
+      handleInvite,
     };
   },
 };

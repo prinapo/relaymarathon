@@ -28,8 +28,8 @@ src-capacitor/ios/DerivedData/
 .DS_Store
 *.log
 nul
+quasar.config.js.temporary.*
 .env
 serviceAccountKey.json
 .env.*
-!/.env.example
 ftp-config.json

@@ -17,6 +17,8 @@ const teamsCollection = collection(db, "teams");
 const appointmentsCollection = collection(db, "appointments");
 const faqCollection = collection(db, "faq");
 const helpCollection = collection(db, "help");
+const routesCollection = collection(db, "routes");
+const usersCollection = collection(db, "users");
 
 const createSegment = (index = 1) => ({
   id: `segment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -50,11 +52,14 @@ const normalizeRace = (snapshotOrRace) => {
     id: snapshotOrRace.id || data.id,
     name: data.name ?? "",
     location: data.location ?? "",
+    startLocation: data.startLocation ?? "",
     date: data.date ?? "",
     startTime: data.startTime || "08:00",
     defaultStartDelay: Number(data.defaultStartDelay) || 0,
     isDefault: data.isDefault === true,
     segments: normalizeSegments(data.segments),
+    routeEmbedCode: data.routeEmbedCode ?? "",
+    adminUids: data.adminUids || [],
   };
 };
 
@@ -86,11 +91,14 @@ export function useFirestore() {
     const nextRace = {
       name: raceData.name ?? "",
       location: raceData.location ?? "",
+      startLocation: raceData.startLocation ?? "",
       date: raceData.date ?? "",
       startTime: raceData.startTime || "08:00",
       defaultStartDelay: Number(raceData.defaultStartDelay) || 0,
       isDefault: races.length === 0,
       segments: normalizeSegments(raceData.segments),
+      routeEmbedCode: raceData.routeEmbedCode ?? "",
+      adminUids: raceData.adminUids || [],
     };
 
     const docRef = await addDoc(racesCollection, nextRace);
@@ -103,6 +111,8 @@ export function useFirestore() {
       ...data,
       defaultStartDelay: Number(data.defaultStartDelay) || 0,
       segments: normalizeSegments(data.segments),
+      routeEmbedCode: data.routeEmbedCode ?? "",
+      adminUids: data.adminUids || [],
     });
   };
 
@@ -131,6 +141,27 @@ export function useFirestore() {
     await batch.commit();
   };
 
+  const addRaceAdmin = async (raceId, adminUid) => {
+    const races = await getRaces();
+    const race = races.find((r) => r.id === raceId);
+    if (!race) return;
+    const currentAdmins = race.adminUids || [];
+    if (currentAdmins.includes(adminUid)) return;
+    await updateDoc(doc(db, "races", raceId), {
+      adminUids: [...currentAdmins, adminUid],
+    });
+  };
+
+  const removeRaceAdmin = async (raceId, adminUid) => {
+    const races = await getRaces();
+    const race = races.find((r) => r.id === raceId);
+    if (!race) return;
+    const currentAdmins = race.adminUids || [];
+    await updateDoc(doc(db, "races", raceId), {
+      adminUids: currentAdmins.filter((uid) => uid !== adminUid),
+    });
+  };
+
   const getRacesListener = (onUpdate, onError = () => {}) => {
     return onSnapshot(
       racesCollection,
@@ -138,7 +169,7 @@ export function useFirestore() {
         const races = snapshot.docs.map(normalizeRace);
         onUpdate(races);
       },
-      onError
+      onError,
     );
   };
 
@@ -160,7 +191,7 @@ export function useFirestore() {
         }));
         onUpdate(teams);
       },
-      onError
+      onError,
     );
   };
 
@@ -190,6 +221,14 @@ export function useFirestore() {
     await setDoc(userRef, data);
   };
 
+  const getUsers = async () => {
+    const snapshot = await getDocs(usersCollection);
+    return snapshot.docs.map((userDoc) => ({
+      id: userDoc.id,
+      ...userDoc.data(),
+    }));
+  };
+
   const normalizeAppointment = (snapshotOrAppointment) => {
     if (!snapshotOrAppointment) return null;
 
@@ -208,6 +247,7 @@ export function useFirestore() {
       locationEn: data.locationEn ?? "",
       description: data.description ?? "",
       descriptionEn: data.descriptionEn ?? "",
+      raceId: data.raceId ?? "",
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
     };
@@ -229,6 +269,7 @@ export function useFirestore() {
       answerEn: data.answerEn ?? "",
       hidden: data.hidden === true,
       order: Number(data.order) || 0,
+      raceId: data.raceId ?? "",
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
     };
@@ -246,7 +287,7 @@ export function useFirestore() {
         const appointments = snapshot.docs.map(normalizeAppointment);
         onUpdate(appointments);
       },
-      onError
+      onError,
     );
   };
 
@@ -260,6 +301,7 @@ export function useFirestore() {
       locationEn: appointmentData.locationEn ?? "",
       description: appointmentData.description ?? "",
       descriptionEn: appointmentData.descriptionEn ?? "",
+      raceId: appointmentData.raceId ?? "",
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -294,6 +336,7 @@ export function useFirestore() {
       bodyEn: data.bodyEn ?? "",
       hidden: data.hidden === true,
       order: Number(data.order) || 0,
+      raceId: data.raceId ?? "",
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
     };
@@ -314,7 +357,7 @@ export function useFirestore() {
           .sort((a, b) => a.order - b.order);
         onUpdate(faqs);
       },
-      onError
+      onError,
     );
   };
 
@@ -368,7 +411,7 @@ export function useFirestore() {
           .sort((a, b) => a.order - b.order);
         onUpdate(helps);
       },
-      onError
+      onError,
     );
   };
 
@@ -423,6 +466,66 @@ export function useFirestore() {
     await batch.commit();
   };
 
+  const normalizeRoute = (snapshotOrRoute) => {
+    if (!snapshotOrRoute) return null;
+    const data =
+      typeof snapshotOrRoute.data === "function"
+        ? snapshotOrRoute.data()
+        : snapshotOrRoute;
+    return {
+      id: snapshotOrRoute.id || data.id,
+      raceId: data.raceId ?? "",
+      name: data.name ?? "",
+      embedCode: data.embedCode ?? "",
+      isDefault: data.isDefault === true,
+      createdAt: data.createdAt?.toDate?.() || new Date(),
+    };
+  };
+
+  const getRoutes = async () => {
+    const snapshot = await getDocs(routesCollection);
+    return snapshot.docs.map(normalizeRoute);
+  };
+
+  const getRoutesListener = (onUpdate, onError = () => {}) => {
+    return onSnapshot(
+      routesCollection,
+      (snapshot) => {
+        const routes = snapshot.docs.map(normalizeRoute);
+        onUpdate(routes);
+      },
+      (error) => {
+        console.error("Error in routes listener:", error);
+        onError(error);
+      },
+    );
+  };
+
+  const createRoute = async (routeData) => {
+    const docRef = await addDoc(routesCollection, {
+      raceId: routeData.raceId ?? "",
+      name: routeData.name ?? "",
+      embedCode: routeData.embedCode ?? "",
+      isDefault: routeData.isDefault || false,
+      createdAt: new Date(),
+    });
+    return docRef.id;
+  };
+
+  const updateRoute = async (routeId, data) => {
+    const routeRef = doc(db, "routes", routeId);
+    await updateDoc(routeRef, data);
+  };
+
+  const deleteRoute = async (routeId) => {
+    await deleteDoc(doc(db, "routes", routeId));
+  };
+
+  const getRouteByRace = async (raceId) => {
+    const routes = await getRoutes();
+    return routes.find((r) => r.raceId === raceId && r.isDefault);
+  };
+
   return {
     createSegment,
     normalizeSegments,
@@ -433,6 +536,8 @@ export function useFirestore() {
     updateRace,
     deleteRace,
     setDefaultRace,
+    addRaceAdmin,
+    removeRaceAdmin,
     getRacesListener,
     getTeams,
     getTeamsListener,
@@ -441,6 +546,7 @@ export function useFirestore() {
     deleteTeam,
     getUser,
     setUser,
+    getUsers,
     getAppointments,
     getAppointmentsListener,
     createAppointment,
@@ -458,5 +564,18 @@ export function useFirestore() {
     updateHelp,
     deleteHelp,
     reorderHelps,
+    getRoutes,
+    getRoutesListener,
+    createRoute,
+    updateRoute,
+    deleteRoute,
+    getRouteByRace,
+    submitAdminRequest: async (requestData) => {
+      await addDoc(collection(db, "adminRequests"), {
+        ...requestData,
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      });
+    },
   };
 }

@@ -39,7 +39,13 @@ export default function () {
     framework: {
       config: {},
       plugins: ["Notify"],
-      boot: ["app-version", "firebase", "android-back-button", "status-bar"],
+      boot: [
+        "app-version",
+        "firebase",
+        "android-back-button",
+        "status-bar",
+        "edge-to-edge",
+      ],
     },
 
     extras: ["material-icons"],

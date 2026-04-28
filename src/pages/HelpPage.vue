@@ -7,41 +7,38 @@
 
       <q-card-section v-if="isAdmin" class="q-pt-none">
         <q-btn
-          :label="t('common.add')"
+          :label="t('help.add')"
           color="primary"
           icon="add"
-          @click="openDialog()"
+          @click="openHelpDialog()"
         />
       </q-card-section>
 
-      <q-card-section class="q-pt-none">
-        <div v-if="loading" class="text-center q-pa-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
+      <q-card-section v-if="helpsLoading" class="text-center q-pa-md">
+        <q-spinner-dots color="primary" size="40px" />
+      </q-card-section>
 
-        <div
-          v-else-if="visibleHelps.length === 0"
-          class="text-center text-grey-7 q-pa-md"
-        >
-          {{ t("help.noContent") }}
-        </div>
+      <q-card-section v-else-if="visibleHelps.length === 0" class="text-center text-grey-7 q-pa-md">
+        {{ t("help.noHelps") }}
+      </q-card-section>
 
-        <q-list v-else separator>
+      <q-card-section v-else>
+        <q-list separator>
           <q-expansion-item
             v-for="(help, index) in visibleHelps"
             :key="help.id"
             expand-separator
             switch-toggle-side
-            class="q-mb-sm faq-item"
-            :class="{ 'faq-item--hidden': help.hidden }"
+            class="q-mb-sm help-item"
+            :class="{ 'help-item--hidden': help.hidden }"
             header-class="q-py-sm"
           >
             <template #header>
               <div class="row items-center no-wrap full-width q-gutter-sm">
                 <div class="col">
                   <div
-                    class="text-h6 text-primary text-weight-bold"
-                    :class="{ 'faq-text--hidden': help.hidden }"
+                    class="text-subtitle1 text-primary"
+                    :class="{ 'help-text--hidden': help.hidden }"
                   >
                     {{ getBilingual(help, "title") }}
                   </div>
@@ -56,7 +53,7 @@
                     round
                     dense
                     icon="arrow_upward"
-                    :disable="index === 0 || reordering"
+                    :disable="index === 0 || helpReordering"
                     @click.stop="moveHelp(index, -1)"
                   >
                     <q-tooltip>Su</q-tooltip>
@@ -66,30 +63,26 @@
                     round
                     dense
                     icon="arrow_downward"
-                    :disable="index === visibleHelps.length - 1 || reordering"
+                    :disable="index === visibleHelps.length - 1 || helpReordering"
                     @click.stop="moveHelp(index, 1)"
                   >
-                    <q-tooltip>Giu</q-tooltip>
+                    <q-tooltip>Giù</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
                     round
                     dense
                     :icon="help.hidden ? 'visibility' : 'visibility_off'"
-                    color="warning"
-                    @click.stop="toggleHidden(help)"
+                    @click.stop="toggleHelpVisibility(help)"
                   >
-                    <q-tooltip>{{
-                      help.hidden ? t("faq.show") : t("faq.hide")
-                    }}</q-tooltip>
+                    <q-tooltip>{{ help.hidden ? t("help.show") : t("help.hide") }}</q-tooltip>
                   </q-btn>
                   <q-btn
                     flat
                     round
                     dense
                     icon="edit"
-                    color="primary"
-                    @click.stop="openDialog(help)"
+                    @click.stop="openHelpDialog(help)"
                   >
                     <q-tooltip>{{ t("common.edit") }}</q-tooltip>
                   </q-btn>
@@ -97,9 +90,9 @@
                     flat
                     round
                     dense
-                    icon="delete"
                     color="negative"
-                    @click.stop="confirmDelete(help)"
+                    icon="delete"
+                    @click.stop="confirmDeleteHelp(help)"
                   >
                     <q-tooltip>{{ t("common.delete") }}</q-tooltip>
                   </q-btn>
@@ -107,91 +100,78 @@
               </div>
             </template>
 
-            <div
-              class="q-pa-md text-body1"
-              :class="{ 'faq-text--hidden': help.hidden }"
-            >
-              {{ getBilingual(help, "body") }}
-            </div>
+            <q-card>
+              <q-card-section>
+                <div v-html="getBilingual(help, 'answer')" />
+              </q-card-section>
+            </q-card>
           </q-expansion-item>
         </q-list>
       </q-card-section>
     </q-card>
 
-    <q-dialog v-model="showDialog" persistent>
-      <q-card class="dialog-card-large">
+    <q-dialog v-model="helpDialog" persistent>
+      <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">
-            {{ editingHelp ? t("common.edit") : t("common.add") }}
+            {{ editingHelp ? t("help.edit") : t("help.add") }}
           </div>
         </q-card-section>
 
-        <q-card-section class="q-pt-none q-gutter-sm">
+        <q-card-section>
           <q-input
-            v-model="form.title"
-            :label="t('help.sectionTitle')"
-            type="text"
+            v-model="helpForm.question"
+            :label="t('help.question')"
             outlined
-            dense
-            autofocus
+            class="q-mb-md"
           />
           <q-input
-            v-model="form.titleEn"
-            :label="t('help.sectionTitleEn')"
-            type="text"
+            v-model="helpForm.questionEn"
+            :label="t('help.questionEn')"
             outlined
-            dense
+            class="q-mb-md"
           />
           <q-input
-            v-model="form.body"
-            :label="t('help.sectionBody')"
+            v-model="helpForm.answer"
+            :label="t('help.answer')"
             type="textarea"
             outlined
-            dense
-            rows="4"
+            class="q-mb-md"
           />
           <q-input
-            v-model="form.bodyEn"
-            :label="t('help.sectionBodyEn')"
+            v-model="helpForm.answerEn"
+            :label="t('help.answerEn')"
             type="textarea"
             outlined
-            dense
-            rows="4"
+            class="q-mb-md"
           />
           <q-toggle
-            v-if="isAdmin"
-            v-model="form.hidden"
+            v-model="helpForm.hidden"
             :label="t('help.hidden')"
           />
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat :label="t('common.cancel')" @click="closeDialog" />
-          <q-btn color="primary" :label="t('common.save')" @click="saveHelp" />
+          <q-btn flat :label="t('common.cancel')" @click="closeHelpDialog" />
+          <q-btn flat :label="t('common.save')" color="primary" @click="saveHelp" />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="confirmDeleteDialog" persistent>
-      <q-card class="dialog-card-medium">
-        <q-card-section>
-          <div class="text-h6">{{ t("common.delete") }}</div>
+    <q-dialog v-model="confirmDeleteHelpDialog">
+      <q-card>
+        <q-card-section class="row items-center q-pb-none">
+          <q-icon name="warning" color="negative" size="md" class="q-mr-md" />
+          <span class="text-h6">{{ t("help.deleteConfirm") }}</span>
         </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <div>{{ t("help.deleteConfirm") }}</div>
-          <div v-if="helpToDelete" class="text-subtitle2 q-mt-sm">
-            "{{ getBilingual(helpToDelete, "title") }}"
-          </div>
+        <q-card-section v-if="helpToDelete">
+          "{{ getBilingual(helpToDelete, "question") }}"
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat :label="t('common.cancel')" @click="cancelDelete" />
-          <q-btn
-            color="negative"
-            :label="t('common.delete')"
-            @click="deleteHelpConfirmed"
-          />
+          <q-btn flat :label="t('common.cancel')" @click="confirmDeleteHelpDialog = false" />
+          <q-btn flat :label="t('common.delete')" color="negative" @click="doDeleteHelp" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -199,19 +179,11 @@
 </template>
 
 <script>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useQuasar } from "quasar";
 import { useAuth } from "src/composables/useAuth.js";
 import { useFirestore } from "src/composables/useFirestore.js";
 import { useI18n } from "src/composables/useI18n.js";
-
-const createEmptyForm = () => ({
-  title: "",
-  titleEn: "",
-  body: "",
-  bodyEn: "",
-  hidden: false,
-});
 
 export default {
   setup() {
@@ -226,19 +198,24 @@ export default {
     } = useFirestore();
     const { t, locale } = useI18n();
 
-    const loading = ref(true);
-    const reordering = ref(false);
     const helps = ref([]);
-    const showDialog = ref(false);
-    const confirmDeleteDialog = ref(false);
-    const helpToDelete = ref(null);
+    const helpsLoading = ref(true);
+    const helpDialog = ref(false);
     const editingHelp = ref(null);
-    const form = ref(createEmptyForm());
-
-    let unsubscribe = null;
+    const helpForm = ref({
+      question: "",
+      questionEn: "",
+      answer: "",
+      answerEn: "",
+      hidden: false,
+    });
+    const confirmDeleteHelpDialog = ref(false);
+    const helpToDelete = ref(null);
+    const helpReordering = ref(false);
+    let helpUnsubscribe = null;
 
     const visibleHelps = computed(() =>
-      isAdmin.value ? helps.value : helps.value.filter((help) => !help.hidden)
+      isAdmin.value ? helps.value : helps.value.filter((help) => !help.hidden),
     );
 
     const getBilingual = (row, field) => {
@@ -249,48 +226,55 @@ export default {
       return row[field] || "";
     };
 
-    const openDialog = (help = null) => {
+    const openHelpDialog = (help = null) => {
       editingHelp.value = help;
-      form.value = help
+      helpForm.value = help
         ? {
-            title: help.title || "",
-            titleEn: help.titleEn || "",
-            body: help.body || "",
-            bodyEn: help.bodyEn || "",
-            hidden: help.hidden === true,
+            question: help.question,
+            questionEn: help.questionEn || "",
+            answer: help.answer,
+            answerEn: help.answerEn || "",
+            hidden: help.hidden || false,
           }
-        : createEmptyForm();
-      showDialog.value = true;
+        : createEmptyHelpForm();
+      helpDialog.value = true;
     };
 
-    const closeDialog = () => {
-      showDialog.value = false;
+    const closeHelpDialog = () => {
+      helpDialog.value = false;
       editingHelp.value = null;
-      form.value = createEmptyForm();
     };
+
+    const createEmptyHelpForm = () => ({
+      question: "",
+      questionEn: "",
+      answer: "",
+      answerEn: "",
+      hidden: false,
+    });
 
     const saveHelp = async () => {
-      if (!form.value.title || !form.value.body) {
+      if (!helpForm.value.question) {
         $q.notify({
-          type: "warning",
-          message: t("faq.validationRequired"),
+          type: "negative",
+          message: t("help.validationRequired"),
         });
         return;
       }
 
       try {
         if (editingHelp.value) {
-          await updateHelp(editingHelp.value.id, form.value);
+          await updateHelp(editingHelp.value.id, helpForm.value);
         } else {
-          await createHelp(form.value);
+          await createHelp(helpForm.value);
         }
+        closeHelpDialog();
         $q.notify({
           type: "positive",
           message: t("help.saved"),
         });
-        closeDialog();
       } catch (error) {
-        console.error("Error saving help content:", error);
+        console.error("Error saving help:", error);
         $q.notify({
           type: "negative",
           message: t("help.saveError"),
@@ -298,114 +282,110 @@ export default {
       }
     };
 
-    const confirmDelete = (help) => {
+    const confirmDeleteHelp = (help) => {
       helpToDelete.value = help;
-      confirmDeleteDialog.value = true;
+      confirmDeleteHelpDialog.value = true;
     };
 
-    const cancelDelete = () => {
-      helpToDelete.value = null;
-      confirmDeleteDialog.value = false;
-    };
-
-    const deleteHelpConfirmed = async () => {
-      if (!helpToDelete.value) {
-        cancelDelete();
-        return;
-      }
-
+    const doDeleteHelp = async () => {
+      if (!helpToDelete.value) return;
       try {
         await deleteHelp(helpToDelete.value.id);
+        confirmDeleteHelpDialog.value = false;
+        helpToDelete.value = null;
         $q.notify({
           type: "positive",
           message: t("help.deleted"),
         });
       } catch (error) {
-        console.error("Error deleting help content:", error);
+        console.error("Error deleting help:", error);
         $q.notify({
           type: "negative",
           message: t("help.deleteError"),
         });
-      } finally {
-        cancelDelete();
       }
     };
 
-    const toggleHidden = async (help) => {
+    const toggleHelpVisibility = async (help) => {
       try {
         await updateHelp(help.id, { hidden: !help.hidden });
+        $q.notify({
+          type: "positive",
+          message: t("help.visibilityUpdated"),
+        });
       } catch (error) {
-        console.error("Error toggling help hidden state:", error);
+        console.error("Error toggling help visibility:", error);
         $q.notify({
           type: "negative",
-          message: t("help.saveError"),
+          message: t("help.visibilityError"),
         });
       }
     };
 
     const moveHelp = async (index, direction) => {
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= visibleHelps.value.length) {
-        return;
-      }
-
-      reordering.value = true;
-      const reordered = [...helps.value];
-      const [item] = reordered.splice(index, 1);
-      reordered.splice(nextIndex, 0, item);
-
+      if (helpReordering.value) return;
+      helpReordering.value = true;
       try {
-        await reorderHelps(reordered);
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= visibleHelps.value.length) return;
+
+        const newOrder = [...helps.value];
+        const [moved] = newOrder.splice(index, 1);
+        newOrder.splice(targetIndex, 0, moved);
+
+        await reorderHelps(newOrder);
+        $q.notify({
+          type: "positive",
+          message: t("help.reordered"),
+        });
       } catch (error) {
-        console.error("Error reordering help content:", error);
+        console.error("Error reordering help:", error);
         $q.notify({
           type: "negative",
-          message: t("faq.reorderError"),
+          message: t("help.reorderError"),
         });
       } finally {
-        reordering.value = false;
+        helpReordering.value = false;
       }
     };
 
     onMounted(async () => {
-      unsubscribe = getHelpsListener(
-        (updatedHelps) => {
-          helps.value = updatedHelps;
-          loading.value = false;
+      helpsLoading.value = true;
+      helpUnsubscribe = getHelpsListener(
+        (data) => {
+          helps.value = data;
+          helpsLoading.value = false;
         },
         (error) => {
-          console.error("Help listener error:", error);
-          loading.value = false;
-        }
+          console.error("Error loading helps:", error);
+          helpsLoading.value = false;
+        },
       );
     });
 
     onUnmounted(() => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (helpUnsubscribe) helpUnsubscribe();
     });
 
     return {
       t,
+      locale,
       isAdmin,
-      loading,
+      helpsLoading,
       visibleHelps,
-      showDialog,
-      confirmDeleteDialog,
-      helpToDelete,
+      helpDialog,
       editingHelp,
-      form,
-      openDialog,
-      closeDialog,
-      saveHelp,
-      confirmDelete,
-      cancelDelete,
-      deleteHelpConfirmed,
+      helpForm,
+      confirmDeleteHelpDialog,
+      helpReordering,
       getBilingual,
-      toggleHidden,
+      openHelpDialog,
+      closeHelpDialog,
+      saveHelp,
+      confirmDeleteHelp,
+      doDeleteHelp,
+      toggleHelpVisibility,
       moveHelp,
-      reordering,
     };
   },
 };

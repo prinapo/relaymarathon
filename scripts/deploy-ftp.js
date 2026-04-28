@@ -1,4 +1,3 @@
-/* eslint-env node */
 const ftp = require("basic-ftp");
 const fs = require("fs");
 const path = require("path");

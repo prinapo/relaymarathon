@@ -1,9 +1,10 @@
 <template>
-  <q-page>
+  <q-page v-if="authInitialized">
     <q-card class="q-pa-md">
       <q-card-section>
         <q-tabs v-model="tab" class="text-grey-8">
           <q-tab name="races" :label="t('admin.tab.races')" />
+          <q-tab v-if="isAdmin" name="raceAdmins" :label="t('admin.tab.raceAdmins')" />
           <q-tab name="translations" :label="t('admin.tab.translations')" />
         </q-tabs>
       </q-card-section>
@@ -198,6 +199,56 @@
 
           <div v-else class="text-body2 text-grey-7">
             {{ t("admin.noRaceSelected") }}
+          </div>
+        </q-tab-panel>
+
+        <q-tab-panel name="raceAdmins">
+          <div v-if="!selectedRaceId" class="text-body2 text-grey-7">
+            {{ t("admin.noRaceSelected") }}
+          </div>
+          <div v-else>
+            <div class="text-h6 q-mb-md">
+              {{ t("admin.raceAdminsTitle") }}: {{ selectedRace?.name }}
+            </div>
+
+            <div class="row q-col-gutter-md q-mb-md">
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newAdminEmail"
+                  :label="t('admin.addAdminEmail')"
+                  outlined
+                  dense
+                />
+              </div>
+              <div class="col-12 col-md-auto">
+                <q-btn
+                  :label="t('admin.addAdmin')"
+                  color="primary"
+                  :disable="!newAdminEmail.trim()"
+                  @click="handleAddRaceAdmin"
+                />
+              </div>
+            </div>
+
+            <q-list bordered separator>
+              <q-item v-for="adminUid in (selectedRace?.adminUids || [])" :key="adminUid">
+                <q-item-section>
+                  <q-item-label>{{ getUserDisplayName(adminUid) || adminUid }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    flat
+                    round
+                    color="negative"
+                    icon="delete"
+                    @click="handleRemoveRaceAdmin(adminUid)"
+                  />
+                </q-item-section>
+              </q-item>
+              <div v-if="!(selectedRace?.adminUids || []).length" class="text-body2 text-grey-7 q-pa-md">
+                {{ t("admin.noRaceAdmins") }}
+              </div>
+            </q-list>
           </div>
         </q-tab-panel>
 
@@ -415,6 +466,7 @@
 <script>
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useQuasar } from "quasar";
+import { auth } from "src/boot/firebase.js";
 import { useAuth, waitForAuthReady } from "src/composables/useAuth.js";
 import { useFirestore } from "src/composables/useFirestore.js";
 import { useI18n } from "src/composables/useI18n.js";
@@ -427,17 +479,21 @@ export default {
       getRaces,
       getRacesListener,
       getTeamsListener,
+      getUsers,
       createRace,
       createSegment,
       updateRace,
       deleteRace,
       setDefaultRace,
+      addRaceAdmin,
+      removeRaceAdmin,
     } = useFirestore();
     const { t, translations, saveTranslations } = useI18n();
 
     const tab = ref("races");
     const races = ref([]);
     const teams = ref([]);
+    const users = ref([]);
     const selectedRaceId = ref("");
     const editableRace = ref(null);
     const creatingRace = ref(false);
@@ -448,6 +504,7 @@ export default {
     const editableTranslations = ref({});
     const originalTranslations = ref({});
     const isEditing = ref(false);
+    const newAdminEmail = ref("");
     const confirmEditDialog = ref(false);
     const confirmDeleteDialog = ref(false);
     const confirmRemoveSegmentDialog = ref(false);
@@ -484,6 +541,11 @@ export default {
         type: "text",
         error: validationErrors.value.location || "",
       },
+      startLocation: {
+        label: t("admin.raceStartLocation"),
+        type: "text",
+        error: "",
+      },
       date: {
         label: t("admin.raceDate"),
         type: "date",
@@ -499,6 +561,11 @@ export default {
         type: "number",
         error: "",
       },
+      routeEmbedCode: {
+        label: t("admin.routeEmbedCode"),
+        type: "textarea",
+        error: "",
+      },
     }));
 
     const raceDataRows = computed(() => {
@@ -509,6 +576,12 @@ export default {
           label: raceFieldMeta.value.name.label,
           displayValue: editableRace.value.name,
           error: raceFieldMeta.value.name.error,
+        },
+        {
+          key: "startLocation",
+          label: raceFieldMeta.value.startLocation.label,
+          displayValue: editableRace.value.startLocation || "",
+          error: "",
         },
         {
           key: "location",
@@ -534,15 +607,25 @@ export default {
           displayValue: `${Number(editableRace.value.defaultStartDelay) || 0}`,
           error: "",
         },
+        ...(isAdmin.value
+          ? [
+              {
+                key: "routeEmbedCode",
+                label: raceFieldMeta.value.routeEmbedCode.label,
+                displayValue: editableRace.value.routeEmbedCode || "",
+                error: "",
+              },
+            ]
+          : []),
       ];
     });
 
     const activeRaceFieldLabel = computed(
-      () => raceFieldMeta.value[activeRaceFieldKey.value]?.label || ""
+      () => raceFieldMeta.value[activeRaceFieldKey.value]?.label || "",
     );
 
     const activeRaceFieldType = computed(
-      () => raceFieldMeta.value[activeRaceFieldKey.value]?.type || "text"
+      () => raceFieldMeta.value[activeRaceFieldKey.value]?.type || "text",
     );
 
     const activeRaceFieldError = computed(() => {
@@ -597,11 +680,11 @@ export default {
       () =>
         `${
           isEditing.value ? "bg-secondary" : "bg-blue-1"
-        } text-weight-medium cursor-pointer`
+        } text-weight-medium cursor-pointer`,
     );
 
     const translationKeys = computed(() =>
-      Object.keys(editableTranslations.value)
+      Object.keys(editableTranslations.value),
     );
     const validationErrors = computed(() => {
       const race = editableRace.value;
@@ -622,7 +705,7 @@ export default {
       }
       if (
         (race.segments || []).some(
-          (segment) => (Number(segment.distance) || 0) <= 0
+          (segment) => (Number(segment.distance) || 0) <= 0,
         )
       ) {
         errors.segments = t("admin.validationSegmentDistance");
@@ -633,20 +716,21 @@ export default {
     const segmentDistanceError = computed(() =>
       (Number(segmentDraft.value.distance) || 0) > 0
         ? ""
-        : t("admin.validationSegmentDistance")
+        : t("admin.validationSegmentDistance"),
     );
     const raceOptions = computed(() =>
       races.value.map((race) => ({
         label: race.isDefault
           ? `${race.name?.trim() || t("admin.unnamedRace")} (${t(
-              "admin.defaultBadge"
+              "admin.defaultBadge",
             )})`
           : race.name?.trim() || t("admin.unnamedRace"),
         value: race.id,
-      }))
+      })),
     );
     const selectedRace = computed(
-      () => races.value.find((race) => race.id === selectedRaceId.value) || null
+      () =>
+        races.value.find((race) => race.id === selectedRaceId.value) || null,
     );
 
     const cloneRace = (race) =>
@@ -654,6 +738,7 @@ export default {
         ? {
             name: race.name || "",
             location: race.location || "",
+            startLocation: race.startLocation || "",
             date: race.date || "",
             startTime: race.startTime || "08:00",
             defaultStartDelay: Number(race.defaultStartDelay) || 0,
@@ -663,10 +748,10 @@ export default {
 
     const syncEditableTranslations = () => {
       editableTranslations.value = JSON.parse(
-        JSON.stringify(translations.value)
+        JSON.stringify(translations.value),
       );
       originalTranslations.value = JSON.parse(
-        JSON.stringify(translations.value)
+        JSON.stringify(translations.value),
       );
     };
 
@@ -799,7 +884,7 @@ export default {
     const removeSegment = () => {
       if (!editableRace.value || !pendingSegmentRemovalId.value) return;
       editableRace.value.segments = editableRace.value.segments.filter(
-        (segment) => segment.id !== pendingSegmentRemovalId.value
+        (segment) => segment.id !== pendingSegmentRemovalId.value,
       );
       pendingSegmentRemovalId.value = "";
     };
@@ -807,7 +892,7 @@ export default {
     const openSegmentEditor = (segmentId) => {
       if (!editableRace.value) return;
       const segment = editableRace.value.segments.find(
-        (item) => item.id === segmentId
+        (item) => item.id === segmentId,
       );
       if (!segment) return;
 
@@ -835,15 +920,16 @@ export default {
         return;
       }
 
-      editableRace.value.segments = editableRace.value.segments.map((segment) =>
-        segment.id === activeSegmentId.value
-          ? {
-              ...segment,
-              name: segmentDraft.value.name?.trim() || segment.name,
-              type: segmentDraft.value.type === "group" ? "group" : "solo",
-              distance: Number(segmentDraft.value.distance) || 0,
-            }
-          : segment
+      editableRace.value.segments = editableRace.value.segments.map(
+        (segment) =>
+          segment.id === activeSegmentId.value
+            ? {
+                ...segment,
+                name: segmentDraft.value.name?.trim() || segment.name,
+                type: segmentDraft.value.type === "group" ? "group" : "solo",
+                distance: Number(segmentDraft.value.distance) || 0,
+              }
+            : segment,
       );
 
       segmentEditorDialog.value = false;
@@ -875,6 +961,7 @@ export default {
         const raceId = await createRace({
           name: "",
           location: "",
+          startLocation: "",
           date: "",
           startTime: "08:00",
           defaultStartDelay: 0,
@@ -895,7 +982,7 @@ export default {
 
     const handleSaveRace = async (
       showNotify = true,
-      notifyInvalid = showNotify
+      notifyInvalid = showNotify,
     ) => {
       if (!selectedRaceId.value || !editableRace.value) return;
       if (Object.keys(validationErrors.value).length > 0) {
@@ -994,6 +1081,84 @@ export default {
       }, 500);
     };
 
+    const handleAddRaceAdmin = async () => {
+      if (!newAdminEmail.value.trim() || !selectedRaceId.value) return;
+      
+      const searchEmail = newAdminEmail.value.trim().toLowerCase();
+      let adminUid = null;
+
+      // Prima cerca nei team (utenti che sono in un team)
+      const teamsArray = teams.value || [];
+      const userTeam = teamsArray.find((team) =>
+        (team.runners || []).some(
+          (runner) =>
+            (runner.email || "").toLowerCase() === searchEmail ||
+            (runner.name || "").toLowerCase() === searchEmail,
+        ),
+      );
+      
+      if (userTeam) {
+        const runner = userTeam.runners.find(
+          (r) =>
+            (r.email || "").toLowerCase() === searchEmail ||
+            (r.name || "").toLowerCase() === searchEmail,
+        );
+        adminUid = runner?.id;
+      }
+
+      // Se non trovato, cerca nella collezione users
+      if (!adminUid) {
+        const usersArray = users.value || [];
+        const user = usersArray.find(
+          (u) => (u.email || "").toLowerCase() === searchEmail,
+        );
+        adminUid = user?.id;
+      }
+
+      if (!adminUid) {
+        $q.notify({
+          type: "negative",
+          message: t("admin.adminNotFound"),
+        });
+        return;
+      }
+      await addRaceAdmin(selectedRaceId.value, adminUid);
+      newAdminEmail.value = "";
+      await loadAdminData();
+      $q.notify({
+        type: "positive",
+        message: t("admin.adminAdded"),
+      });
+    };
+
+    const handleRemoveRaceAdmin = async (adminUid) => {
+      if (!selectedRaceId.value || !adminUid) return;
+      await removeRaceAdmin(selectedRaceId.value, adminUid);
+      await loadAdminData();
+      $q.notify({
+        type: "positive",
+        message: t("admin.adminRemoved"),
+      });
+    };
+
+    const getUserDisplayName = (uid) => {
+      // Prima cerca nei team
+      const teamsArray = teams.value || [];
+      for (const team of teamsArray) {
+        const runner = (team.runners || []).find((r) => r.id === uid);
+        if (runner) {
+          return runner.name || runner.email || uid;
+        }
+      }
+      // Poi cerca nella collezione users
+      const usersArray = users.value || [];
+      const user = usersArray.find((u) => u.id === uid);
+      if (user) {
+        return user.displayName || user.email || uid;
+      }
+      return uid;
+    };
+
     watch(
       selectedRace,
       (race, previousRace) => {
@@ -1004,7 +1169,7 @@ export default {
         editableRace.value = cloneRace(race);
         suppressRaceAutosave.value = false;
       },
-      { immediate: true }
+      { immediate: true },
     );
 
     watch(
@@ -1012,7 +1177,7 @@ export default {
       () => {
         syncEditableTranslations();
       },
-      { deep: true, immediate: true }
+      { deep: true, immediate: true },
     );
 
     watch(
@@ -1020,11 +1185,23 @@ export default {
       () => {
         scheduleRaceAutosave();
       },
-      { deep: true }
+      { deep: true },
     );
 
     const loadAdminData = async () => {
       if (unsubscribeTeams || unsubscribeRaces) return;
+
+      const user = auth.currentUser;
+      if (user) {
+        const tokenResult = await user.getIdTokenResult(true);
+        if (!tokenResult.claims.admin) {
+          console.log('User is not admin, claims:', tokenResult.claims);
+          return;
+        }
+      }
+
+      const usersData = await getUsers();
+      users.value = usersData;
 
       unsubscribeRaces = getRacesListener(
         (newRaces) => {
@@ -1037,7 +1214,7 @@ export default {
         },
         (error) => {
           console.error("Error in races listener:", error);
-        }
+        },
       );
 
       unsubscribeTeams = getTeamsListener(
@@ -1046,7 +1223,7 @@ export default {
         },
         (error) => {
           console.error("Error in teams listener:", error);
-        }
+        },
       );
     };
 
@@ -1068,7 +1245,7 @@ export default {
         if (!ready || !admin) return;
         await loadAdminData();
       },
-      { immediate: true }
+      { immediate: true },
     );
 
     return {
@@ -1082,6 +1259,9 @@ export default {
       savingTranslations,
       deletingRace,
       isEditing,
+      isAdmin,
+      authInitialized,
+      newAdminEmail,
       confirmEditDialog,
       confirmDeleteDialog,
       confirmRemoveSegmentDialog,
@@ -1104,6 +1284,9 @@ export default {
       selectedRace,
       segmentDraft,
       notifyReadOnly,
+      handleAddRaceAdmin,
+      handleRemoveRaceAdmin,
+      getUserDisplayName,
       beginEdit,
       cancelEdit,
       endEdit,

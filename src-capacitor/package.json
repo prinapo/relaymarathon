@@ -12,6 +12,7 @@
     "@capacitor/ios": "^7.6.1",
     "@capacitor/splash-screen": "^7.0.5",
     "@capacitor/status-bar": "^7.0.6",
+    "@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
     "@capgo/capacitor-social-login": "^7.20.0"
   }
 }

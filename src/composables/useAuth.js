@@ -57,6 +57,7 @@ const initAuth = () => {
       if (firebaseUser) {
         const tokenResult = await firebaseUser.getIdTokenResult(true);
         userClaims.value = tokenResult.claims;
+        console.log('[DEBUG Auth] Token claims:', JSON.stringify(tokenResult.claims));
       } else {
         userClaims.value = null;
       }

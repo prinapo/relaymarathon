@@ -2,7 +2,9 @@ export const defaultTranslations = {
   "app.title": { it: "Milano Relay Marathon", en: "Milano Relay Marathon" },
   "nav.home": { it: "Home", en: "Home" },
   "nav.team": { it: "Squadra", en: "Team" },
+  "nav.races": { it: "Gare", en: "Races" },
   "nav.admin": { it: "Admin", en: "Admin Panel" },
+  "nav.adminRequest": { it: "Richiedi Accesso Admin", en: "Request Admin Access" },
   "nav.login": { it: "Accedi", en: "Login" },
   "nav.logout": { it: "Esci", en: "Logout" },
   "page.home": { it: "Milano Relay Marathon", en: "Milano Relay Marathon" },
@@ -315,6 +317,7 @@ export const defaultTranslations = {
     en: "Runner names, paces and start delay are now configured on the Home page.",
   },
   "admin.tab.races": { it: "Gare", en: "Races" },
+  "admin.tab.raceAdmins": { it: "Admin Gara", en: "Race Admins" },
   "admin.tab.translations": { it: "Traduzioni", en: "Translations" },
   "admin.selectRace": { it: "Seleziona gara", en: "Select race" },
   "admin.addRace": { it: "Aggiungi gara", en: "Add race" },
@@ -393,6 +396,7 @@ export const defaultTranslations = {
   },
   "admin.raceName": { it: "Nome gara", en: "Race name" },
   "admin.raceLocation": { it: "Luogo", en: "Location" },
+  "admin.raceStartLocation": { it: "Luogo Partenza", en: "Start Location" },
   "admin.raceDate": { it: "Data", en: "Date" },
   "admin.unnamedRace": { it: "Gara senza nome", en: "Unnamed race" },
   "admin.newRaceName": { it: "Nuova gara", en: "New race" },
@@ -461,6 +465,38 @@ export const defaultTranslations = {
   "admin.validationSegmentDistance": {
     it: "Ogni tappa deve avere una distanza maggiore di 0.",
     en: "Each segment must have a distance greater than 0.",
+  },
+  "admin.routeEmbedCode": {
+    it: "Codice embed percorso",
+    en: "Route embed code",
+  },
+  "admin.raceAdminsTitle": {
+    it: "Admin della gara",
+    en: "Race admins",
+  },
+  "admin.addAdminEmail": {
+    it: "Email o nome runner",
+    en: "Email or runner name",
+  },
+  "admin.addAdmin": {
+    it: "Aggiungi admin",
+    en: "Add admin",
+  },
+  "admin.noRaceAdmins": {
+    it: "Nessun admin per questa gara",
+    en: "No admins for this race",
+  },
+  "admin.adminAdded": {
+    it: "Admin aggiunto",
+    en: "Admin added",
+  },
+  "admin.adminRemoved": {
+    it: "Admin rimosso",
+    en: "Admin removed",
+  },
+  "admin.adminNotFound": {
+    it: "Utente non trovato. L'utente deve prima essere in un team.",
+    en: "User not found. User must first be in a team.",
   },
   "admin.saveDistances": { it: "Salva Distanze", en: "Save Distances" },
   "admin.translationsInfo": {
@@ -655,10 +691,39 @@ export const defaultTranslations = {
     en: "Only admins can edit FAQs",
   },
   "route.title": { it: "Percorso Gara", en: "Race Route" },
+  "route.noRaceSelected": {
+    it: "Seleziona una gara per vedere il percorso.",
+    en: "Select a race to see the route.",
+  },
+  "route.notConfigured": {
+    it: "Percorso non ancora configurato.",
+    en: "Route not configured yet.",
+  },
+  "race.selectRace": { it: "Seleziona Gara", en: "Select Race" },
+  "race.startTime": { it: "Partenza", en: "Start" },
   "common.save": { it: "Salva", en: "Save" },
   "common.cancel": { it: "Annulla", en: "Cancel" },
   "common.delete": { it: "Elimina", en: "Delete" },
   "common.edit": { it: "Modifica", en: "Edit" },
   "common.add": { it: "Aggiungi", en: "Add" },
   "common.actions": { it: "Azioni", en: "Actions" },
+  "common.required": { it: "Obbligatorio", en: "Required" },
+  "adminRequest.title": { it: "Richiedi Accesso Admin", en: "Request Admin Access" },
+  "adminRequest.loginRequired": {
+    it: "Effettua il login per richiedere l'accesso come admin.",
+    en: "Login to request admin access.",
+  },
+  "adminRequest.alreadyAdmin": {
+    it: "Sei già admin di una o più gare.",
+    en: "You are already admin of one or more races.",
+  },
+  "adminRequest.description": {
+    it: "Compila il modulo sottostante per richiedere l'accesso come amministratore di una gara. Ti ricontatteremo.",
+    en: "Fill out the form below to request admin access for a race. We will contact you.",
+  },
+  "adminRequest.name": { it: "Nome", en: "Name" },
+  "adminRequest.surname": { it: "Cognome", en: "Surname" },
+  "adminRequest.race": { it: "Gara", en: "Race" },
+  "adminRequest.message": { it: "Messaggio (opzionale)", en: "Message (optional)" },
+  "adminRequest.submit": { it: "Invia richiesta", en: "Submit request" },
 };

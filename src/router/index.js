@@ -14,6 +14,7 @@ export default route(function (/* { store, ssrContext } */) {
         children: [
           { path: "", component: () => import("pages/IndexPage.vue") },
           { path: "home", component: () => import("pages/IndexPage.vue") },
+          { path: "race", component: () => import("pages/RacePage.vue") },
           {
             path: "team",
             component: () => import("pages/TeamPage.vue"),
@@ -30,6 +31,12 @@ export default route(function (/* { store, ssrContext } */) {
           },
           { path: "route", component: () => import("pages/PercorsoPage.vue") },
           { path: "faq", component: () => import("pages/FaqPage.vue") },
+          { path: "help", component: () => import("pages/HelpPage.vue") },
+          {
+            path: "admin-request",
+            component: () => import("pages/AdminRequestPage.vue"),
+            meta: { requiresAuth: true },
+          },
         ],
       },
       {

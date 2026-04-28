@@ -1,0 +1,143 @@
+{
+  "firestore_export_version": "11.0.0",
+  "kind": "firestore#exportDocuments",
+  "collections": [
+    {
+      "id": "races",
+      "contents": [
+        {
+          "id": "race_test_001",
+          "data": {
+            "name": "e2e_Gara Test Milano 2026",
+            "location": "Milano, Italia",
+            "date": "2026-06-15",
+            "startTime": "08:00",
+            "defaultStartDelay": 300,
+            "isDefault": false,
+            "segments": [
+              { "id": "seg1", "name": "Tratta 1 - Centro", "type": "solo", "distance": 5 },
+              { "id": "seg2", "name": "Tratta 2 - Nord", "type": "solo", "distance": 5 },
+              { "id": "seg3", "name": "Tratta 3 - Est", "type": "solo", "distance": 5 },
+              { "id": "seg4", "name": "Tratta 4 - Gruppo", "type": "group", "distance": 10 }
+            ],
+            "routeEmbedCode": "",
+            "adminUids": []
+          }
+        },
+        {
+          "id": "race_test_002",
+          "data": {
+            "name": "e2e_Gara Test Roma 2026",
+            "location": "Roma, Italia",
+            "date": "2026-09-20",
+            "startTime": "07:30",
+            "defaultStartDelay": 300,
+            "isDefault": true,
+            "segments": [
+              { "id": "seg1", "name": "Tappa 1 - Centro", "type": "solo", "distance": 7 },
+              { "id": "seg2", "name": "Tappa 2 - Nord", "type": "solo", "distance": 7 },
+              { "id": "seg3", "name": "Tappa 3 - Sud", "type": "group", "distance": 15 }
+            ],
+            "routeEmbedCode": "",
+            "adminUids": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "appointments",
+      "contents": [
+        {
+          "id": "appt_test_001",
+          "data": {
+            "title": "e2e_Briefing Gara Milano",
+            "description": "Briefing tecnico per la gara di Milano",
+            "date": "2026-06-14",
+            "time": "18:00",
+            "location": "Centro Sportivo Milano",
+            "type": "briefing",
+            "raceId": "race_test_001"
+          }
+        },
+        {
+          "id": "appt_test_002",
+          "data": {
+            "title": "e2e_Expo Marathon",
+            "description": "Expo distribuzione pettorali",
+            "date": "2026-06-13",
+            "time": "10:00",
+            "location": "Fiera Milano",
+            "type": "other",
+            "raceId": "race_test_001"
+          }
+        }
+      ]
+    },
+    {
+      "id": "faq",
+      "contents": [
+        {
+          "id": "faq_test_001",
+          "data": {
+            "question": "e2e_Come funziona la gara a tappe?",
+            "answer": "Ogni team corre 4 tappe in sequenza. Ogni.runner corre una o più tappe.",
+            "category": "regolamento",
+            "isHidden": false,
+            "raceId": "all"
+          }
+        },
+        {
+          "id": "faq_test_002",
+          "data": {
+            "question": "e2e_Come viene calcolato il tempo finale?",
+            "answer": "Il tempo finale è la somma dei tempi di tutte le tappe disputate.",
+            "category": "regolamento",
+            "isHidden": false,
+            "raceId": "all"
+          }
+        }
+      ]
+    },
+    {
+      "id": "help",
+      "contents": [
+        {
+          "id": "help_test_001",
+          "data": {
+            "title": "e2e_Guida Team - Creazione",
+            "content": "Per creare un team, accedi alla sezione Team dal menu principale e clicca su 'Crea Team'.",
+            "category": "team",
+            "isHidden": false,
+            "raceId": "all"
+          }
+        },
+        {
+          "id": "help_test_002",
+          "data": {
+            "title": "e2e_Guida Team - Inviti",
+            "content": "Genera un codice invito per invitare nuovi membri al tuo team.",
+            "category": "team",
+            "isHidden": false,
+            "raceId": "all"
+          }
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "contents": [
+        {
+          "id": "translations",
+          "data": {
+            "values": {
+              "app.title": { "it": "Milano Relay Marathon", "en": "Milano Relay Marathon" },
+              "nav.home": { "it": "Home", "en": "Home" },
+              "nav.team": { "it": "Team", "en": "Team" },
+              "nav.races": { "it": "Gare", "en": "Races" }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

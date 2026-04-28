@@ -1,6 +1,6 @@
 <template>
   <q-page>
-      <q-card class="q-pa-sm">
+      <q-card class="q-pa-md">
         <q-card-section>
           <div class="text-h6">{{ t("appointments.title") }}</div>
         </q-card-section>
@@ -168,6 +168,16 @@
             dense
             rows="3"
           />
+          <q-select
+            v-if="isAdmin"
+            v-model="form.raceId"
+            :options="raceOptions"
+            :label="t('admin.selectRace')"
+            outlined
+            dense
+            emit-value
+            map-options
+          />
         </q-card-section>
 
         <q-card-actions align="right">
@@ -251,22 +261,26 @@ import { useQuasar } from "quasar";
 import { useAuth } from "src/composables/useAuth.js";
 import { useFirestore } from "src/composables/useFirestore.js";
 import { useI18n } from "src/composables/useI18n.js";
+import { useTeamContext } from "src/composables/useTeamContext.js";
 
 export default {
   setup() {
     const $q = useQuasar();
     const { isAdmin } = useAuth();
+    const { selectedPublicRaceId } = useTeamContext();
     const {
       getAppointments,
       getAppointmentsListener,
       createAppointment,
       updateAppointment,
       deleteAppointment,
+      getRaces,
     } = useFirestore();
     const { t, locale } = useI18n();
 
     const loading = ref(true);
     const appointments = ref([]);
+    const races = ref([]);
     const showDialog = ref(false);
     const showDetails = ref(false);
     const selectedAppointment = ref(null);
@@ -331,8 +345,20 @@ export default {
         : ["date", "title", "location"];
     });
 
+    const raceOptions = computed(() =>
+      races.value.map((race) => ({
+        label: race.name,
+        value: race.id,
+      }))
+    );
+
     const sortedAppointments = computed(() => {
-      return [...appointments.value].sort((a, b) => {
+      const currentRaceId = selectedPublicRaceId.value;
+      const filtered = appointments.value.filter((appt) => {
+        if (!appt.raceId) return true;
+        return appt.raceId === currentRaceId;
+      });
+      return filtered.sort((a, b) => {
         if (!a.date || !b.date) return 0;
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return (a.time || "").localeCompare(b.time || "");
@@ -384,6 +410,7 @@ export default {
           locationEn: appointment.locationEn || "",
           description: appointment.description || "",
           descriptionEn: appointment.descriptionEn || "",
+          raceId: appointment.raceId || "",
         };
       } else {
         form.value = {
@@ -395,6 +422,7 @@ export default {
           locationEn: "",
           description: "",
           descriptionEn: "",
+          raceId: selectedPublicRaceId.value || "",
         };
       }
       showDialog.value = true;
@@ -460,9 +488,14 @@ export default {
     const refreshData = async () => {
       loading.value = true;
       try {
-        appointments.value = await getAppointments();
+        const [appointmentsData, racesData] = await Promise.all([
+          getAppointments(),
+          getRaces(),
+        ]);
+        appointments.value = appointmentsData;
+        races.value = racesData;
       } catch (error) {
-        console.error("Error loading appointments:", error);
+        console.error("Error loading data:", error);
       } finally {
         loading.value = false;
       }
@@ -491,6 +524,7 @@ export default {
       sortedAppointments,
       columns,
       visibleColumns,
+      raceOptions,
       isAdmin,
       showDialog,
       showDetails,

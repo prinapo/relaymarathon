@@ -1,21 +1,9 @@
 <template>
   <q-page>
     <q-card class="q-pa-sm">
-      <q-tabs
-        v-model="currentTab"
-        class="text-primary"
-        active-color="primary"
-        indicator-color="primary"
-        align="justify"
-        narrow-indicator
-      >
-        <q-tab name="faq" :label="t('faq.title')" no-caps />
-        <q-tab name="help" :label="t('help.title')" no-caps />
-      </q-tabs>
-
-      <q-tab-panels v-model="currentTab" animated>
-        <!-- FAQ TAB -->
-        <q-tab-panel name="faq" class="q-pa-sm">
+      <q-card-section>
+        <div class="text-h6">{{ t("faq.title") }}</div>
+      </q-card-section>
           <q-card-section v-if="isAdmin">
             <q-btn
               :label="t('faq.add')"
@@ -124,133 +112,14 @@
                   class="q-pa-md text-body1"
                   :class="{ 'faq-text--hidden': faq.hidden }"
                 >
-                  {{ getBilingual(faq, "answer") }}
+{{ getBilingual(faq, "answer") }}
                 </div>
               </q-expansion-item>
             </q-list>
           </q-card-section>
-        </q-tab-panel>
+        </q-card>
 
-        <!-- HELP TAB -->
-        <q-tab-panel name="help" class="q-pa-sm">
-          <q-card-section v-if="isAdmin">
-            <q-btn
-              :label="t('common.add')"
-              color="primary"
-              icon="add"
-              @click="openHelpDialog()"
-            />
-          </q-card-section>
-
-          <q-card-section v-if="helpsLoading" class="text-center q-pa-md">
-            <q-spinner-dots color="primary" size="40px" />
-          </q-card-section>
-
-          <q-card-section
-            v-else-if="visibleHelps.length === 0"
-            class="text-center text-grey-7 q-pa-md"
-          >
-            {{ t("help.noContent") }}
-          </q-card-section>
-
-          <q-card-section v-else>
-            <q-list separator>
-              <q-expansion-item
-                v-for="(help, index) in visibleHelps"
-                :key="help.id"
-                expand-separator
-                switch-toggle-side
-                class="q-mb-sm faq-item"
-                :class="{ 'faq-item--hidden': help.hidden }"
-                header-class="q-py-sm"
-              >
-                <template #header>
-                  <div class="row items-center no-wrap full-width q-gutter-sm">
-                    <div class="col">
-                      <div
-                        class="text-subtitle1 text-primary"
-                        :class="{ 'faq-text--hidden': help.hidden }"
-                      >
-                        {{ getBilingual(help, "title") }}
-                      </div>
-                      <div v-if="help.hidden" class="text-caption text-grey-7">
-                        {{ t("help.hidden") }}
-                      </div>
-                    </div>
-
-                    <template v-if="isAdmin">
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="arrow_upward"
-                        :disable="index === 0 || helpReordering"
-                        @click.stop="moveHelp(index, -1)"
-                      >
-                        <q-tooltip>Su</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="arrow_downward"
-                        :disable="
-                          index === visibleHelps.length - 1 || helpReordering
-                        "
-                        @click.stop="moveHelp(index, 1)"
-                      >
-                        <q-tooltip>Giu</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        :icon="help.hidden ? 'visibility' : 'visibility_off'"
-                        color="warning"
-                        @click.stop="toggleHelpHidden(help)"
-                      >
-                        <q-tooltip>{{
-                          help.hidden ? t("faq.show") : t("faq.hide")
-                        }}</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="edit"
-                        color="primary"
-                        @click.stop="openHelpDialog(help)"
-                      >
-                        <q-tooltip>{{ t("common.edit") }}</q-tooltip>
-                      </q-btn>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete"
-                        color="negative"
-                        @click.stop="confirmHelpDelete(help)"
-                      >
-                        <q-tooltip>{{ t("common.delete") }}</q-tooltip>
-                      </q-btn>
-                    </template>
-                  </div>
-                </template>
-
-                <div
-                  class="q-pa-md text-body1"
-                  :class="{ 'faq-text--hidden': help.hidden }"
-                >
-                  {{ getBilingual(help, "body") }}
-                </div>
-              </q-expansion-item>
-            </q-list>
-          </q-card-section>
-        </q-tab-panel>
-      </q-tab-panels>
-    </q-card>
-
-    <!-- FAQ DIALOG -->
+        <!-- FAQ DIALOG -->
     <q-dialog v-model="showFaqDialog" persistent>
       <q-card class="dialog-card-large">
         <q-card-section>
@@ -416,6 +285,7 @@ import { useQuasar } from "quasar";
 import { useAuth } from "src/composables/useAuth.js";
 import { useFirestore } from "src/composables/useFirestore.js";
 import { useI18n } from "src/composables/useI18n.js";
+import { useTeamContext } from "src/composables/useTeamContext.js";
 
 const createEmptyFaqForm = () => ({
   question: "",
@@ -424,28 +294,22 @@ const createEmptyFaqForm = () => ({
   answerEn: "",
   hidden: false,
 });
-const createEmptyHelpForm = () => ({
-  title: "",
-  titleEn: "",
-  body: "",
-  bodyEn: "",
-  hidden: false,
-});
 
 export default {
   setup() {
     const $q = useQuasar();
     const { isAdmin } = useAuth();
+    const { selectedPublicRaceId } = useTeamContext();
     const {
       getFaqsListener,
+      getHelpsListener,
       createFaq,
       updateFaq,
       deleteFaq: deleteFaqService,
       reorderFaqs,
-      getHelpsListener,
       createHelp,
       updateHelp,
-      deleteHelp,
+      deleteHelp: deleteHelpService,
       reorderHelps,
     } = useFirestore();
     const { t, locale } = useI18n();
@@ -453,32 +317,42 @@ export default {
     const currentTab = ref("faq");
 
     const faqsLoading = ref(true);
+    const helpsLoading = ref(true);
     const faqs = ref([]);
+    const helps = ref([]);
     const showFaqDialog = ref(false);
+    const showHelpDialog = ref(false);
     const confirmFaqDeleteDialog = ref(false);
     const faqToDelete = ref(null);
     const editingFaq = ref(null);
     const faqForm = ref(createEmptyFaqForm());
     const faqReordering = ref(false);
-
-    const helpsLoading = ref(true);
-    const helps = ref([]);
-    const showHelpDialog = ref(false);
+    const helpReordering = ref(false);
     const confirmHelpDeleteDialog = ref(false);
     const helpToDelete = ref(null);
     const editingHelp = ref(null);
-    const helpForm = ref(createEmptyHelpForm());
-    const helpReordering = ref(false);
+    const helpForm = ref({ title: "", titleEn: "", body: "", bodyEn: "", hidden: false });
 
     let faqUnsubscribe = null;
     let helpUnsubscribe = null;
 
-    const visibleFaqs = computed(() =>
-      isAdmin.value ? faqs.value : faqs.value.filter((faq) => !faq.hidden),
-    );
-    const visibleHelps = computed(() =>
-      isAdmin.value ? helps.value : helps.value.filter((help) => !help.hidden),
-    );
+    const visibleFaqs = computed(() => {
+      const currentRaceId = selectedPublicRaceId.value;
+      const filtered = faqs.value.filter((faq) => {
+        if (!faq.raceId) return true;
+        return faq.raceId === currentRaceId;
+      });
+      return isAdmin.value ? filtered : filtered.filter((faq) => !faq.hidden);
+    });
+
+    const visibleHelps = computed(() => {
+      const currentRaceId = selectedPublicRaceId.value;
+      const filtered = helps.value.filter((help) => {
+        if (!help.raceId) return true;
+        return help.raceId === currentRaceId;
+      });
+      return isAdmin.value ? filtered : filtered.filter((help) => !help.hidden);
+    });
 
     const getBilingual = (row, field) => {
       const currentLocale = locale?.value || "it";
@@ -610,21 +484,17 @@ export default {
             bodyEn: help.bodyEn || "",
             hidden: help.hidden === true,
           }
-        : createEmptyHelpForm();
+        : { title: "", titleEn: "", body: "", bodyEn: "", hidden: false };
       showHelpDialog.value = true;
     };
 
     const closeHelpDialog = () => {
       showHelpDialog.value = false;
       editingHelp.value = null;
-      helpForm.value = createEmptyHelpForm();
+      helpForm.value = { title: "", titleEn: "", body: "", bodyEn: "", hidden: false };
     };
 
     const saveHelp = async () => {
-      if (!helpForm.value.title || !helpForm.value.body) {
-        $q.notify({ type: "warning", message: t("faq.validationRequired") });
-        return;
-      }
       try {
         if (editingHelp.value) {
           await updateHelp(editingHelp.value.id, helpForm.value);
@@ -634,7 +504,7 @@ export default {
         $q.notify({ type: "positive", message: t("help.saved") });
         closeHelpDialog();
       } catch (error) {
-        console.error("Error saving help content:", error);
+        console.error("Error saving help:", error);
         $q.notify({ type: "negative", message: t("help.saveError") });
       }
     };
@@ -655,10 +525,10 @@ export default {
         return;
       }
       try {
-        await deleteHelp(helpToDelete.value.id);
+        await deleteHelpService(helpToDelete.value.id);
         $q.notify({ type: "positive", message: t("help.deleted") });
       } catch (error) {
-        console.error("Error deleting help content:", error);
+        console.error("Error deleting help:", error);
         $q.notify({ type: "negative", message: t("help.deleteError") });
       } finally {
         cancelHelpDelete();
@@ -667,27 +537,41 @@ export default {
 
     const toggleHelpHidden = async (help) => {
       try {
-        await updateHelp(help.id, { hidden: !help.hidden });
+        await updateHelp(help.id, {
+          title: help.title,
+          titleEn: help.titleEn,
+          body: help.body,
+          bodyEn: help.bodyEn,
+          hidden: !help.hidden,
+          order: help.order,
+        });
+        $q.notify({ type: "positive", message: t("help.visibilityUpdated") });
       } catch (error) {
-        console.error("Error toggling help hidden state:", error);
-        $q.notify({ type: "negative", message: t("help.saveError") });
+        console.error("Error updating help visibility:", error);
+        $q.notify({ type: "negative", message: t("help.visibilityError") });
       }
     };
 
     const moveHelp = async (index, direction) => {
-      const nextIndex = index + direction;
-      if (nextIndex < 0 || nextIndex >= visibleHelps.value.length) return;
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= visibleHelps.value.length) return;
+
+      const reorderedHelps = [...helps.value];
+      const sourceHelp = visibleHelps.value[index];
+      const targetHelp = visibleHelps.value[targetIndex];
+      const sourceIndex = reorderedHelps.findIndex((h) => h.id === sourceHelp.id);
+      const targetIndexInArray = reorderedHelps.findIndex((h) => h.id === targetHelp.id);
+
+      reorderedHelps[sourceIndex] = targetHelp;
+      reorderedHelps[targetIndexInArray] = sourceHelp;
 
       helpReordering.value = true;
-      const reordered = [...helps.value];
-      const [item] = reordered.splice(index, 1);
-      reordered.splice(nextIndex, 0, item);
-
       try {
-        await reorderHelps(reordered);
+        await reorderHelps(reorderedHelps);
+        $q.notify({ type: "positive", message: t("help.reordered") });
       } catch (error) {
-        console.error("Error reordering help content:", error);
-        $q.notify({ type: "negative", message: t("faq.reorderError") });
+        console.error("Error reordering helps:", error);
+        $q.notify({ type: "negative", message: t("help.reorderError") });
       } finally {
         helpReordering.value = false;
       }

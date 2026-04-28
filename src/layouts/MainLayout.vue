@@ -1,58 +1,185 @@
 <template>
-  <q-layout view="lhh LpR lff">
-    <q-page-container
-      :style="{
-        ...pageContainerStyle,
-        border: 'none',
-        borderWidth: '0',
-        borderStyle: 'none',
-      }"
+  <q-layout view="lHh Lpr lFf">
+    <!-- Header -->
+    <q-header elevated class="bg-primary text-white">
+      <q-toolbar>
+        <q-btn
+          dense
+          flat
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="drawer = !drawer"
+        />
+        <q-toolbar-title>
+          {{ t("app.title") }}
+        </q-toolbar-title>
+
+        <!-- Language Toggle -->
+        <q-btn flat dense icon="translate" @click="toggleLanguage">
+          <q-tooltip>{{ t("lang." + language) }}</q-tooltip>
+        </q-btn>
+
+        <!-- User Menu -->
+        <template v-if="user">
+          <q-btn flat dense @click="handleLogout">
+            {{ t("nav.logout") }}
+          </q-btn>
+          <q-avatar class="q-ml-sm" size="28px">
+            <img v-if="user.photoURL" :src="user.photoURL" />
+            <q-icon v-else name="person" size="20px" />
+          </q-avatar>
+        </template>
+        <q-btn v-else flat :label="t('nav.login')" @click="navigateTo('/login')" />
+      </q-toolbar>
+    </q-header>
+
+    <!-- Drawer (Sidebar) -->
+    <q-drawer
+      v-model="drawer"
+      show-if-above
+      bordered
+      class="column full-height bg-white"
     >
+      <q-scroll-area class="col">
+        <q-list padding>
+          <!-- Home -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/'); drawer = false"
+            :active="route.path === '/'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="home" /></q-item-section>
+            <q-item-section>{{ t("nav.home") }}</q-item-section>
+          </q-item>
+
+          <!-- Team (logged in only) -->
+          <q-item
+            v-if="user"
+            clickable
+            v-ripple
+            @click="navigateTo('/team'); drawer = false"
+            :active="route.path === '/team'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="groups" /></q-item-section>
+            <q-item-section>{{ t("nav.team") }}</q-item-section>
+          </q-item>
+
+          <!-- Races -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/race'); drawer = false"
+            :active="route.path === '/race'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="directions_run" /></q-item-section>
+            <q-item-section>{{ t("nav.races") }}</q-item-section>
+          </q-item>
+
+          <!-- Appointments -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/appointments'); drawer = false"
+            :active="route.path === '/appointments'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="event" /></q-item-section>
+            <q-item-section>{{ t("nav.appointments") }}</q-item-section>
+          </q-item>
+
+          <!-- Route -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/route'); drawer = false"
+            :active="route.path === '/route'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="map" /></q-item-section>
+            <q-item-section>{{ t("nav.route") }}</q-item-section>
+          </q-item>
+
+          <!-- FAQ -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/faq'); drawer = false"
+            :active="route.path === '/faq'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="help" /></q-item-section>
+            <q-item-section>{{ t("nav.faq") }}</q-item-section>
+          </q-item>
+
+          <!-- Help -->
+          <q-item
+            clickable
+            v-ripple
+            @click="navigateTo('/help'); drawer = false"
+            :active="route.path === '/help'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="help_outline" /></q-item-section>
+            <q-item-section>{{ t("nav.help") }}</q-item-section>
+          </q-item>
+
+          <q-separator class="q-my-md" />
+
+          <!-- Admin (only for admin users) -->
+          <q-item
+            v-if="isAdmin"
+            clickable
+            v-ripple
+            @click="navigateTo('/admin'); drawer = false"
+            :active="route.path === '/admin'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="admin_panel_settings" /></q-item-section>
+            <q-item-section>{{ t("nav.admin") }}</q-item-section>
+          </q-item>
+
+          <!-- Request Admin Access (logged in non-admin only) -->
+          <q-item
+            v-if="user && !isAdmin"
+            clickable
+            v-ripple
+            @click="navigateTo('/admin-request'); drawer = false"
+            :active="route.path === '/admin-request'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="assignment_ind" /></q-item-section>
+            <q-item-section>{{ t("nav.adminRequest") }}</q-item-section>
+          </q-item>
+
+          <!-- Login (not logged in) -->
+          <q-item
+            v-if="!user"
+            clickable
+            v-ripple
+            @click="navigateTo('/login'); drawer = false"
+            :active="route.path === '/login'"
+            active-class="text-primary"
+          >
+            <q-item-section avatar><q-icon name="login" /></q-item-section>
+            <q-item-section>{{ t("nav.login") }}</q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+    </q-drawer>
+
+    <!-- Page Container -->
+    <q-page-container>
       <router-view />
     </q-page-container>
 
-    <q-footer
-      class="bg-white text-grey-8"
-      style="padding-top: 8px; border: none; box-shadow: none"
-    >
-      <q-tabs
-        v-model="currentTab"
-        class="text-grey-7 nav-tabs"
-        active-color="primary"
-        indicator-color="primary"
-        narrow-indicator
-        dense
-        inline
-        style="max-width: 100vw"
-      >
-        <q-route-tab to="/" icon="home" :label="t('nav.home')" no-caps />
-        <q-route-tab
-          v-if="user"
-          to="/team"
-          icon="group"
-          :label="t('nav.team')"
-          no-caps
-        />
-        <q-route-tab
-          to="/appointments"
-          icon="event"
-          :label="t('nav.appointments')"
-          no-caps
-        />
-        <q-route-tab to="/route" icon="map" :label="t('nav.route')" no-caps />
-        <q-route-tab to="/faq" icon="help" :label="t('nav.faq')" no-caps />
-        <q-route-tab
-          :to="user ? '' : '/login'"
-          :icon="user ? 'logout' : 'login'"
-          :label="user ? t('nav.logout') : t('nav.login')"
-          no-caps
-          @click="user ? handleLogout() : null"
-        />
-      </q-tabs>
-      <div
-        class="text-center text-caption text-grey-5 q-pb-xs"
-        style="font-size: 10px"
-      >
+    <!-- Footer with version -->
+    <q-footer class="bg-white text-grey-8" style="border: none; box-shadow: none">
+      <div class="text-center text-caption text-grey-5 q-pa-xs" style="font-size: 10px">
         v{{ appVersion }}
       </div>
     </q-footer>
@@ -60,18 +187,14 @@
 </template>
 
 <style scoped>
-.nav-tabs {
-  width: 100%;
+.q-header {
+  padding-top: env(safe-area-inset-top);
 }
-.nav-tabs :deep(.q-tab) {
-  min-width: 0;
-  padding: 0 4px;
+.q-page-container {
+  padding-top: 50px !important;
 }
-.nav-tabs :deep(.q-tab__icon) {
-  font-size: 20px;
-}
-.nav-tabs :deep(.q-tab__label) {
-  display: none !important;
+.q-footer {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 </style>
 
@@ -87,10 +210,26 @@ export default {
     const { t, language, languages, setLanguage } = useI18n();
     const router = useRouter();
     const route = useRoute();
-    const currentTab = ref("/");
+
+    const drawer = ref(false);
+
+    const toggleLanguage = () => {
+      const newLang = language.value === "it" ? "en" : "it";
+      setLanguage(newLang);
+    };
+
+    const navigateTo = (path) => {
+      router.push(path);
+    };
+
+    const handleLogout = async () => {
+      drawer.value = false;
+      await logout();
+      router.push("/login");
+    };
 
     const appVersion = computed(() => {
-      return window.__APP_VERSION__ || "1.0.0";
+      return window.__APP_VERSION__ || "1.5.0";
     });
 
     const currentLanguageLabel = computed(() => {
@@ -98,46 +237,19 @@ export default {
       return lang?.label || "IT";
     });
 
-    const pageTitle = computed(() => {
-      const pageTitles = {
-        "/": t("page.home"),
-        "/home": t("page.home"),
-        "/team": t("page.team"),
-        "/admin": t("page.admin"),
-        "/login": t("page.login"),
-        "/appointments": t("page.appointments"),
-        "/faq": t("page.faq"),
-        "/help": t("page.help"),
-        "/route": t("page.route"),
-        "/splash": t("page.splash"),
-      };
-
-      return pageTitles[route.path] || t("app.title");
-    });
-
-    const pageContainerStyle = computed(() => {
-      return { paddingTop: "0px" };
-    });
-
-    const handleLogout = async () => {
-      await logout();
-      router.push("/login");
-    };
-
     return {
+      drawer,
       user,
-      logout: handleLogout,
+      route,
       isAdmin,
       t,
       language,
-      setLanguage,
       languages,
-      pageTitle,
-      currentLanguageLabel,
-      currentTab,
-      appVersion,
+      navigateTo,
       handleLogout,
-      pageContainerStyle,
+      toggleLanguage,
+      appVersion,
+      currentLanguageLabel,
     };
   },
 };

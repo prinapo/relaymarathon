@@ -12,6 +12,12 @@
         "twitter": false
       },
       "logLevel": 1
+    },
+    "SystemBars": {
+      "insetsHandling": "disable"
+    },
+    "EdgeToEdge": {
+      "backgroundColor": "#173A79"
     }
   },
   "cordova": {
