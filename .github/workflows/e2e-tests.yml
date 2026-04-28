@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "Checking emulator status..."
           sleep 5
-          curl -s http://localhost:8080/v1/projects/${{ env.EMULATOR_PROJECT }}/databases/(default)/documents || true
+          curl -s "http://localhost:8080/v1/projects/${{ env.EMULATOR_PROJECT }}/databases/(default)/documents" || true
 
       - name: Build app
         run: npm run build
